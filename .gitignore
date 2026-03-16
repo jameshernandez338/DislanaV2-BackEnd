@@ -1,0 +1,13 @@
+syntax : glob
+.vs/
+Dislana.Api/bin/
+Dislana.Api/obj/
+Dislana.Application/bin/
+Dislana.Application/obj/
+Dislana.Domain/bin/
+Dislana.Domain/obj/
+Dislana.Infrastructure/bin/
+Dislana.Infrastructure/obj/
+Dislana.Tests/bin/
+Dislana.Tests/obj/
+

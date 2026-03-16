@@ -1,0 +1,6 @@
+@Dislana.Api_HostAddress = http://localhost:5191
+
+GET {{Dislana.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

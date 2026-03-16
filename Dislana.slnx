@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Dislana.Api/Dislana.Api.csproj" />
+  <Project Path="Dislana.Application/Dislana.Application.csproj" />
+  <Project Path="Dislana.Domain/Dislana.Domain.csproj" />
+  <Project Path="Dislana.Infrastructure/Dislana.Infrastructure.csproj" />
+  <Project Path="Dislana.Tests/Dislana.Tests.csproj" Id="533b7ab8-6792-48cf-bdcd-3a90d988e8cb" />
+</Solution>
