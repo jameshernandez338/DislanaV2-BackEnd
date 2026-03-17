@@ -33,7 +33,7 @@ namespace Dislana.Api.Controllers
 
             var result = await _orderService.SaveOrderAsync(login, request, request.Orillo ?? string.Empty, cancellationToken);
 
-            return Ok(new { message = result });
+            return Ok(result);
         }
     }
 }
