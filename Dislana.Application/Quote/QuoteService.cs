@@ -1,5 +1,6 @@
 using Dislana.Application.Quote.DTOs;
 using Dislana.Application.Quote.Interfaces;
+using Dislana.Domain.Quote.Entities;
 using Dislana.Domain.Quote.Interfaces;
 
 namespace Dislana.Application.Quote
@@ -29,12 +30,12 @@ namespace Dislana.Application.Quote
              .AsReadOnly();
         }
 
-        public async Task<CustomerBalanceDto?> GetCustomerBalanceAsync(string login, CancellationToken cancellationToken)
+        public async Task<CustomerTaxDto?> GetCustomerTaxesAsync(string login, CancellationToken cancellationToken)
         {
-            var entity = await _quoteRepository.GetCustomerBalanceAsync(login, cancellationToken);
+            var entity = await _quoteRepository.GetCustomerTaxesAsync(login, cancellationToken);
             if (entity == null) return null;
 
-            return new CustomerBalanceDto(
+            return new CustomerTaxDto(
                 entity.Descuento,
                 entity.Iva,
                 entity.ReteFuente,
@@ -46,6 +47,24 @@ namespace Dislana.Application.Quote
                 entity.Cupo,
                 entity.UsaCupo
             );
+        }
+
+        public async Task<IReadOnlyList<CustomerBalanceEntryDto>> GetCustomerBalanceAsync(string login, string type, CancellationToken cancellationToken)
+        {
+            IEnumerable<CustomerBalanceEntryEntity> items;
+
+            // choose repository method based on type
+            items = type switch
+            {
+                "saldoAFavor" => await _quoteRepository.GetCustomerOverdueBalance(login, cancellationToken),
+                "cartera" => await _quoteRepository.GetCustomerCreditBalance(login, cancellationToken),
+                "apin" => await _quoteRepository.GetCustomerApin(login, cancellationToken),
+                _ => await _quoteRepository.GetCustomerOverdueBalance(login, cancellationToken)
+            };
+
+            return items.Select(i => new CustomerBalanceEntryDto(i.Observacion, i.Tipo, i.Numero, i.Fecha, i.Valor))
+                        .ToList()
+                        .AsReadOnly();
         }
     }
 }

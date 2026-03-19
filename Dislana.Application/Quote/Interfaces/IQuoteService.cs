@@ -5,6 +5,7 @@ namespace Dislana.Application.Quote.Interfaces
     public interface IQuoteService
     {
         Task<IReadOnlyList<QuoteDto>> GetQuotesAsync(string login, CancellationToken cancellationToken);
-        Task<CustomerBalanceDto?> GetCustomerBalanceAsync(string login, CancellationToken cancellationToken);
+        Task<CustomerTaxDto?> GetCustomerTaxesAsync(string login, CancellationToken cancellationToken);
+        Task<IReadOnlyList<CustomerBalanceEntryDto>> GetCustomerBalanceAsync(string login, string type, CancellationToken cancellationToken);
     }
 }

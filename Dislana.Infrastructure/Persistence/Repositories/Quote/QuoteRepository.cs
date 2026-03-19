@@ -24,11 +24,11 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Quote
             return result;
         }
 
-        public async Task<CustomerBalanceEntity?> GetCustomerBalanceAsync(string login, CancellationToken cancellationToken)
+        public async Task<CustomerTaxEntity?> GetCustomerTaxesAsync(string login, CancellationToken cancellationToken)
         {
-            const string spName = "usp_getCustomerBalance";
+            const string spName = "usp_getCustomerTaxes";
 
-            var result = await _dbExecutor.QueryAsync<CustomerBalanceEntity>(
+            var result = await _dbExecutor.QueryAsync<CustomerTaxEntity>(
                 spName,
                 new { login },
                 commandType: CommandType.StoredProcedure,
@@ -38,6 +38,45 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Quote
             var row = result.FirstOrDefault();
 
             return row;
+        }
+
+        public async Task<IEnumerable<CustomerBalanceEntryEntity>> GetCustomerOverdueBalance(string login, CancellationToken cancellationToken)
+        {
+            const string spName = "usp_getCustomerOverdueBalance";
+
+            var result = await _dbExecutor.QueryAsync<CustomerBalanceEntryEntity>(
+                spName,
+                new { login = login },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken);
+
+            return result;
+        }
+
+        public async Task<IEnumerable<CustomerBalanceEntryEntity>> GetCustomerCreditBalance(string login, CancellationToken cancellationToken)
+        {
+            const string spName = "usp_getCustomerCreditBalance";
+
+            var result = await _dbExecutor.QueryAsync<CustomerBalanceEntryEntity>(
+                spName,
+                new { login = login },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken);
+
+            return result;
+        }
+
+        public async Task<IEnumerable<CustomerBalanceEntryEntity>> GetCustomerApin(string login, CancellationToken cancellationToken)
+        {
+            const string spName = "usp_getCustomerApin";
+
+            var result = await _dbExecutor.QueryAsync<CustomerBalanceEntryEntity>(
+                spName,
+                new { login = login },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken);
+
+            return result;
         }
     }
 }

@@ -28,9 +28,9 @@ namespace Dislana.Api.Controllers
             return Ok(items);
         }
 
-        // GET api/quote/customer-balance
-        [HttpGet("customer-balance")]
-        public async Task<IActionResult> GetCustomerBalance(CancellationToken cancellationToken)
+        // GET api/quote/customer-taxes
+        [HttpGet("customer-taxes")]
+        public async Task<IActionResult> GetCustomerTaxes(CancellationToken cancellationToken)
         {
             var login = User?.Identity?.Name
                         ?? User?.FindFirst("name")?.Value
@@ -39,11 +39,26 @@ namespace Dislana.Api.Controllers
             if (string.IsNullOrWhiteSpace(login))
                 return BadRequest(new { message = "No se pudo obtener el login del usuario." });
 
-            var balance = await _quoteService.GetCustomerBalanceAsync(login, cancellationToken);
+            var balance = await _quoteService.GetCustomerTaxesAsync(login, cancellationToken);
             if (balance == null)
                 return NotFound();
 
             return Ok(balance);
+        }
+
+        // GET api/quote/customer-balance?type=...
+        [HttpGet("customer-balance")]
+        public async Task<IActionResult> GetCustomerBalance([FromQuery] string type, CancellationToken cancellationToken)
+        {
+            var login = User?.Identity?.Name
+                        ?? User?.FindFirst("name")?.Value
+                        ?? User?.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrWhiteSpace(login))
+                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
+
+            var items = await _quoteService.GetCustomerBalanceAsync(login, type, cancellationToken);
+            return Ok(items);
         }
     }
 }

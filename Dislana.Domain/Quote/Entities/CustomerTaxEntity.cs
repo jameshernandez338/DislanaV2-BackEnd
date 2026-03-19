@@ -1,6 +1,6 @@
 namespace Dislana.Domain.Quote.Entities
 {
-    public class CustomerBalanceEntity
+    public class CustomerTaxEntity
     {
         public decimal Descuento { get; private set; }
         public decimal Iva { get; private set; }
@@ -13,9 +13,9 @@ namespace Dislana.Domain.Quote.Entities
         public decimal Cupo { get; private set; }
         public bool UsaCupo { get; private set; }
 
-        private CustomerBalanceEntity() { }
+        private CustomerTaxEntity() { }
 
-        public CustomerBalanceEntity(decimal descuento, decimal iva, decimal reteFuente, decimal reteIva, decimal reteIca, decimal cartera, decimal apin, decimal saldoAFavor, decimal cupo, bool usaCupo)
+        public CustomerTaxEntity(decimal descuento, decimal iva, decimal reteFuente, decimal reteIva, decimal reteIca, decimal cartera, decimal apin, decimal saldoAFavor, decimal cupo, bool usaCupo)
         {
             Descuento = descuento;
             Iva = iva;

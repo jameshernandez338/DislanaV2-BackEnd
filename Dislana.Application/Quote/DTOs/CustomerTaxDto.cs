@@ -1,6 +1,6 @@
 namespace Dislana.Application.Quote.DTOs
 {
-    public record CustomerBalanceDto(
+    public record CustomerTaxDto(
         decimal Descuento,
         decimal Iva,
         decimal ReteFuente,
