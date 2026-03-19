@@ -1,32 +1,5 @@
-using Dislana.Api.Middlewares;
-using Dislana.Application.Auth;
-using Dislana.Application.Auth.Interfaces;
-using Dislana.Application.Order;
-using Dislana.Application.Order.Interfaces;
-using Dislana.Application.Product;
-using Dislana.Application.Product.Interfaces;
-using Dislana.Application.Quote;
-using Dislana.Application.Quote.Interfaces;
-using Dislana.Application.Stock;
-using Dislana.Application.Stock.Interfaces;
-using Dislana.Domain.Auth.Interfaces;
-using Dislana.Domain.Order.Interfaces;
-using Dislana.Domain.Product.Interfaces;
-using Dislana.Domain.Quote.Interfaces;
-using Dislana.Domain.Stock.Interfaces;
-using Dislana.Infrastructure.Auth;
-using Dislana.Infrastructure.Configuration;
-using Dislana.Infrastructure.Persistence.Dapper;
-using Dislana.Infrastructure.Persistence.Repositories.Auth;
-using Dislana.Infrastructure.Persistence.Repositories.Order;
-using Dislana.Infrastructure.Persistence.Repositories.Product;
-using Dislana.Infrastructure.Persistence.Repositories.Quote;
-using Dislana.Infrastructure.Persistence.Repositories.Stock;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
-using Serilog;
-using System.Text;
+// Per-file using directives were moved to GlobalUsings.cs to reduce repetition and
+// keep Program.cs focused on application bootstrap.
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -78,6 +51,21 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+// Bind WompiOptions and register the bound instance so it can be injected directly
+var wompiOptions = builder.Configuration.GetSection("Payments:Wompi").Get<Dislana.Application.Payment.Options.WompiOptions>() ?? new Dislana.Application.Payment.Options.WompiOptions();
+builder.Services.AddSingleton(wompiOptions);
+// Secret providers: configuration first, then environment
+// Secret providers: register configuration and environment providers, then expose a composite provider as the ISecretProvider
+builder.Services.AddSingleton<ConfigurationSecretProvider>(sp =>
+    new ConfigurationSecretProvider(key => builder.Configuration[key] ?? builder.Configuration.GetConnectionString(key)));
+builder.Services.AddSingleton<EnvironmentSecretProvider>();
+builder.Services.AddSingleton<ISecretProvider>(sp =>
+    new CompositeSecretProvider(new ISecretProvider[] {
+        sp.GetRequiredService<ConfigurationSecretProvider>(),
+        sp.GetRequiredService<EnvironmentSecretProvider>()
+    }));
+
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IQuoteService, QuoteService>();
 
@@ -88,6 +76,7 @@ builder.Services.AddScoped<IProductRepository,ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<IQuoteRepository, QuoteRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IDbExecutor, DbExecutor>();
@@ -106,6 +95,11 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Issuer))
 
 if (string.IsNullOrWhiteSpace(jwtSettings.Audience))
     throw new InvalidOperationException("JWT Audience is not configured.");
+
+// Validate connection string
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
