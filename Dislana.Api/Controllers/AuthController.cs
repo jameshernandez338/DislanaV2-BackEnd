@@ -1,5 +1,4 @@
 ﻿using Dislana.Application.Auth.DTOs;
-using Dislana.Application.Auth.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dislana.Api.Controllers

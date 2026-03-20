@@ -21,6 +21,42 @@ namespace Dislana.Application.Payment
             _wompiOptions = wompiOptions ?? new WompiOptions();
         }
 
+        public async Task ProcessWebhookAsync(WompiWebhookRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
+            var secret = _secretProvider.GetSecret("Wompi:EventsSecret") ?? string.Empty;
+
+            try
+            {
+                var valid = WompiSignatureValidator.Validate(request, secret);
+                var payload = System.Text.Json.JsonSerializer.Serialize(request);
+
+                if (valid)
+                {
+                    var t = request.data?.transaction;
+                    if (t != null)
+                    {
+                        await _paymentRepository.UpdatePaymentAsync(
+                            t.reference ?? string.Empty,
+                            t.status ?? string.Empty,
+                            t.id ?? string.Empty,
+                            t.payment_method_type ?? string.Empty,
+                            request.timestamp.ToString());
+                    }
+                }
+                else
+                {
+                    await _paymentRepository.SavePaymentLogAsync(request.data?.transaction?.reference ?? string.Empty, payload, "Invalid signature");
+                }
+            }
+            catch (Exception ex)
+            {
+                var payload = System.Text.Json.JsonSerializer.Serialize(request);
+                await _paymentRepository.SavePaymentLogAsync(request.data?.transaction?.reference ?? string.Empty, payload, ex.Message);
+            }
+        }
+
         public async Task<WompiPaymentDto> CreatePaymentAsync(string login, PaymentRequestDto request, CancellationToken cancellationToken)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -65,7 +101,7 @@ namespace Dislana.Application.Payment
             return new WompiPaymentDto(publicKey, currency, amountInCents, reference, signature, redirectUrl, urlBase);
         }
 
-        public async Task<OrderSaveResponseDto> SaveOrderOnlyAsync(string login, PaymentRequestDto request, CancellationToken cancellationToken)
+        public async Task<PaymentResponseDto> SaveOrderOnlyAsync(string login, PaymentRequestDto request, CancellationToken cancellationToken)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
@@ -74,7 +110,7 @@ namespace Dislana.Application.Payment
 
             await _paymentRepository.SavePaymentAsync(login, reference, "PRINT", pedido, request.ValorTotal, cancellationToken);
 
-            return new OrderSaveResponseDto(reference);
+            return new PaymentResponseDto(reference, request.ValorTotal);
         }
     }
 }

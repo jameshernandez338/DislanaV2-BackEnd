@@ -1,5 +1,4 @@
 using Dislana.Application.Payment.DTOs;
-using Dislana.Application.Payment.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,6 +53,19 @@ namespace Dislana.Api.Controllers
 
             var result = await _paymentService.SaveOrderOnlyAsync(login, request, cancellationToken);
             return Ok(result);
+        }
+
+        // POST wompi/webhook
+        [HttpPost("/wompi/webhook")]
+        [AllowAnonymous]
+        public async Task<IActionResult> WompiWebhook([FromBody] WompiWebhookRequest body)
+        {
+            if (body == null)
+                return Ok("ok");
+
+            await _paymentService.ProcessWebhookAsync(body);
+
+            return Ok("ok");
         }
     }
 }

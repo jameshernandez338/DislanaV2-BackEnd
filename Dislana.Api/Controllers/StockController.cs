@@ -1,4 +1,3 @@
-using Dislana.Application.Stock.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

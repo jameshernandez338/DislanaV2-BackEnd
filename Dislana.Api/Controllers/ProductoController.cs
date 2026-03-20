@@ -1,5 +1,4 @@
-﻿using Dislana.Application.Product.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dislana.Api.Controllers

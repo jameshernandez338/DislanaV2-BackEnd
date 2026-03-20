@@ -20,5 +20,25 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
         }
+
+        public async Task UpdatePaymentAsync(string reference, string status, string transactionId, string paymentMethod, string timestamp)
+        {
+            const string spName = "usp_updatePaymentStatus";
+
+            await _dbExecutor.ExecuteAsync(
+                spName,
+                new { reference = reference, status = status, transactionId = transactionId, paymentMethod = paymentMethod, timestamp = timestamp },
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task SavePaymentLogAsync(string reference, string payload, string message)
+        {
+            const string spName = "usp_savePaymentLog";
+
+            await _dbExecutor.ExecuteAsync(
+                spName,
+                new { reference = reference, payload = payload, message = message },
+                commandType: CommandType.StoredProcedure);
+        }
     }
 }
