@@ -2,7 +2,7 @@
 {
     public interface IPaymentRepository
     {
-        Task SavePaymentAsync(string login, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken);
+        Task SavePaymentAsync(string userName, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken);
         Task UpdatePaymentAsync(string reference, string status, string transactionId, string paymentMethod, string timestamp);
         Task SavePaymentLogAsync(string reference, string payload, string message);
     }

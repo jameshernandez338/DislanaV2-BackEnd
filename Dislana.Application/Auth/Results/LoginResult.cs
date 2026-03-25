@@ -1,14 +1,19 @@
-﻿namespace Dislana.Application.Auth.Results
+﻿using System.Text.Json.Serialization;
+
+namespace Dislana.Application.Auth.Results
 {
     public class LoginResult
     {
         public bool IsSuccess { get; }
         public string? Message { get; }
         public string? Token { get; }
-        public string? RefreshToken { get; }
         public string? FullName { get; }
 
-        private LoginResult(bool success, string message, string token = null, string refreshToken = null, string fullName = null)
+        // Exists internally but never serialized to JSON responses
+        [JsonIgnore]
+        public string? RefreshToken { get; }
+
+        private LoginResult(bool success, string message, string? token = null, string? refreshToken = null, string? fullName = null)
         {
             IsSuccess = success;
             Message = message;

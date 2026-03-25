@@ -97,6 +97,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             const string sql = @"
                 SELECT 
                     u.Id,
+                    u.UserName,
                     u.Email,
                     u.FirstName,
                     u.LastName,

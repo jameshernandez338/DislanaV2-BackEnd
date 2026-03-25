@@ -15,7 +15,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
         {
             const string spName = "usp_getRefreshToken";
 
-            var result = await _dbExecutor.QuerySingleOrDefaultAsync<RefreshTokenDto>(
+            var result = await _dbExecutor.QuerySingleOrDefaultAsync<RefreshTokenEntity>(
                 spName,
                 new { token = token },
                 commandType: CommandType.StoredProcedure,
@@ -23,12 +23,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
 
             if (result == null) return null;
 
-            return new RefreshTokenEntity(
-                result.Token,
-                result.UserId,
-                result.ExpiresAt,
-                result.CreatedAt,
-                result.IsRevoked);
+            return result;
         }
 
         public async Task SaveRefreshTokenAsync(string token, long userId, DateTime expiresAt, CancellationToken cancellationToken)

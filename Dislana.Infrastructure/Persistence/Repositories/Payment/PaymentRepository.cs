@@ -1,5 +1,6 @@
 ﻿using Dislana.Domain.Payment.Interfaces;
 using Dislana.Infrastructure.Persistence.Dapper;
+using Microsoft.IdentityModel.Abstractions;
 using System.Data;
 
 namespace Dislana.Infrastructure.Persistence.Repositories.Payment
@@ -10,13 +11,19 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
 
         public PaymentRepository(IDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
-        public async Task SavePaymentAsync(string login, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken)
+        public async Task SavePaymentAsync(string userName, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken)
         {
-            const string spName = "usp_saveOrder";
+            const string spName = "usp_savePaymentOrder";
 
             var message = await _dbExecutor.QuerySingleOrDefaultAsync<string?>(
                 spName,
-                new { login = login, pedido = pedido },
+                new { 
+                    userName = userName,
+                    reference = reference,
+                    status = status,
+                    detail = pedido,
+                    amount = valor,
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
         }

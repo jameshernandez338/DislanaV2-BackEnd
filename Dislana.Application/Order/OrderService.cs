@@ -12,9 +12,9 @@ namespace Dislana.Application.Order
 
         public OrderService(IOrderRepository orderRepository) => _orderRepository = orderRepository;
 
-        public async Task<OrderSaveResponseDto> SaveOrderAsync(string login, OrderRequestDto request, string orillo, CancellationToken cancellationToken)
+        public async Task<OrderSaveResponseDto> SaveOrderAsync(string userName, OrderRequestDto request, string orillo, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(login)) throw new ArgumentException("login is required", nameof(login));
+            if (string.IsNullOrWhiteSpace(userName)) throw new ArgumentException("login is required", nameof(userName));
 
             if (request == null) throw new ArgumentNullException(nameof(request));
 
@@ -32,7 +32,7 @@ namespace Dislana.Application.Order
 
             var pedido = new XDocument(root).ToString(SaveOptions.DisableFormatting);
 
-            var repoResult = await _orderRepository.SaveOrderAsync(login, pedido, orillo ?? string.Empty, cancellationToken);
+            var repoResult = await _orderRepository.SaveOrderAsync(userName, pedido, orillo ?? string.Empty, cancellationToken);
 
             var message = repoResult?.Message ?? string.Empty;
             return new OrderSaveResponseDto(message);

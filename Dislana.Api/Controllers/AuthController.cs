@@ -8,6 +8,9 @@ namespace Dislana.Api.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
+        private const string RefreshTokenCookieName = "refreshToken";
+        private const int RefreshTokenExpirationDays = 7;
+
         private readonly IAuthService _authService;
 
         public AuthController(IAuthService authService)
@@ -28,6 +31,7 @@ namespace Dislana.Api.Controllers
                 return BadRequest(new { message = result.Message });
             }
 
+            SetRefreshTokenCookie(result.RefreshToken!);
             return Ok(result);
         }
 
@@ -39,18 +43,64 @@ namespace Dislana.Api.Controllers
             if (!result.IsSuccess)
                 return Unauthorized(new { message = result.Message });
 
+            SetRefreshTokenCookie(result.RefreshToken!);
             return Ok(result);
         }
 
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> RefreshToken(CancellationToken cancellationToken)
         {
-            var result = await _authService.RefreshTokenAsync(request.RefreshToken, cancellationToken);
+            var refreshToken = Request.Cookies[RefreshTokenCookieName];
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+                return Unauthorized(new { message = "Refresh token no encontrado" });
+
+            var result = await _authService.RefreshTokenAsync(refreshToken, cancellationToken);
 
             if (!result.IsSuccess)
+            {
+                RemoveRefreshTokenCookie();
                 return Unauthorized(new { message = result.Message });
+            }
 
+            SetRefreshTokenCookie(result.RefreshToken!);
             return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public IActionResult Logout()
+        {
+            RemoveRefreshTokenCookie();
+            return Ok(new { message = "Sesión cerrada" });
+        }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(RefreshTokenExpirationDays),
+                Path = "/api/auth"
+            };
+
+            Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
+        }
+
+        private void RemoveRefreshTokenCookie()
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(-1),
+                Path = "/api/auth"
+            };
+
+            Response.Cookies.Append(RefreshTokenCookieName, string.Empty, cookieOptions);
         }
     }
 }

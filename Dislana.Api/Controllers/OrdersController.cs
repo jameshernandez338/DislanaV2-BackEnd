@@ -23,14 +23,12 @@ namespace Dislana.Api.Controllers
             if (request.Items == null || !request.Items.Any())
                 return BadRequest(new { message = "La lista de items es requerida." });
 
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
+            var userName = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrWhiteSpace(login))
+            if (string.IsNullOrWhiteSpace(userName))
                 return BadRequest(new { message = "No se pudo obtener el login del usuario." });
 
-            var result = await _orderService.SaveOrderAsync(login, request, request.Orillo ?? string.Empty, cancellationToken);
+            var result = await _orderService.SaveOrderAsync(userName, request, request.Orillo ?? string.Empty, cancellationToken);
 
             return Ok(result);
         }

@@ -2,6 +2,7 @@
 using Dislana.Application.Auth.DTOs;
 using Dislana.Application.Auth.Interfaces;
 using Dislana.Application.Auth.Results;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using FluentAssertions;
@@ -17,23 +18,27 @@ namespace Dislana.Tests.Controllers
         {
             _authServiceMock = new Mock<IAuthService>();
             _controller = new AuthController(_authServiceMock.Object);
+
+            // Setup HttpContext so Response.Cookies works in tests
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
         }
 
         [Fact]
         public async Task Register_Should_Return_Ok_When_Success()
         {
-            // Arrange
             var request = new RegisterRequest("John", "Doe", "john@test.com", "123456");
 
             _authServiceMock
                 .Setup(x => x.RegisterAsync(request, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(LoginResult.Success("token123", "refreshToken123", "John Doe"));
 
-            // Act
             var result = await _controller.Register(request, CancellationToken.None);
 
-            // Assert
             result.Should().BeOfType<OkObjectResult>();
+            _controller.Response.Headers.SetCookie.ToString().Should().Contain("refreshToken");
         }
 
         [Fact]
@@ -65,7 +70,7 @@ namespace Dislana.Tests.Controllers
         }
 
         [Fact]
-        public async Task Login_Should_Return_Ok_When_Success()
+        public async Task Login_Should_Return_Ok_And_Set_Cookie_When_Success()
         {
             var request = new LoginRequest("john@test.com", "123456");
 
@@ -74,6 +79,31 @@ namespace Dislana.Tests.Controllers
                 .ReturnsAsync(LoginResult.Success("token123", "refreshToken123", "John Doe"));
 
             var result = await _controller.Login(request, CancellationToken.None);
+
+            result.Should().BeOfType<OkObjectResult>();
+            _controller.Response.Headers.SetCookie.ToString().Should().Contain("refreshToken");
+        }
+
+        [Fact]
+        public async Task RefreshToken_Should_Return_Unauthorized_When_Cookie_Missing()
+        {
+            // No cookie set — default empty request
+            var result = await _controller.RefreshToken(CancellationToken.None);
+
+            result.Should().BeOfType<UnauthorizedObjectResult>();
+        }
+
+        [Fact]
+        public async Task RefreshToken_Should_Return_Ok_When_Valid_Cookie()
+        {
+            // Simulate cookie in the request
+            _controller.HttpContext.Request.Headers.Append("Cookie", "refreshToken=validToken123");
+
+            _authServiceMock
+                .Setup(x => x.RefreshTokenAsync("validToken123", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(LoginResult.Success("newToken", "newRefreshToken", "John Doe"));
+
+            var result = await _controller.RefreshToken(CancellationToken.None);
 
             result.Should().BeOfType<OkObjectResult>();
         }

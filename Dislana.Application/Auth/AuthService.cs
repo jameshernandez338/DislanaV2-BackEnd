@@ -78,10 +78,8 @@ namespace Dislana.Application.Auth
             // Revoke all previous refresh tokens for this user
             await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id, cancellationToken);
 
-            var hashRefreshToken = _passwordHasher.Hash(request.Password);
-
             await _refreshTokenRepository.SaveRefreshTokenAsync(
-                hashRefreshToken, 
+                refreshToken, 
                 user.Id, 
                 DateTime.UtcNow.AddDays(7), 
                 cancellationToken);
@@ -91,7 +89,7 @@ namespace Dislana.Application.Auth
 
         public async Task<LoginResult> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(refreshToken))
+           if (string.IsNullOrWhiteSpace(refreshToken))
                 return LoginResult.Fail("Refresh token es requerido");
 
             var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken, cancellationToken);

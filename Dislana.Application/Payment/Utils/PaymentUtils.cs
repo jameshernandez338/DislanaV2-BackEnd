@@ -8,8 +8,11 @@ namespace Dislana.Application.Payment.Utils
 {
     internal static class PaymentUtils
     {
-        public static string CreateReference(string userId)
-            => $"ORD-{userId}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        public static string CreateReference()
+        {
+            var random = Random.Shared.Next(10000000, 99999999);
+            return $"ORD-{random}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        }
 
         public static string BuildItemsXml(IReadOnlyList<PaymentItemDto> items)
         {
