@@ -7,5 +7,6 @@ namespace Dislana.Application.Auth.Interfaces
     {
         Task<LoginResult> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken);
         Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken);
+        Task<LoginResult> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken);
     }
 }

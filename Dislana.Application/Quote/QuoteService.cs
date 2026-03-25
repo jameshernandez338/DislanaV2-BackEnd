@@ -11,9 +11,9 @@ namespace Dislana.Application.Quote
 
         public QuoteService(IQuoteRepository quoteRepository) => _quoteRepository = quoteRepository;
 
-        public async Task<IReadOnlyList<QuoteDto>> GetQuotesAsync(string login, CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<QuoteDto>> GetQuotesAsync(string userId, CancellationToken cancellationToken)
         {
-            var items = await _quoteRepository.GetQuotesAsync(login, cancellationToken);
+            var items = await _quoteRepository.GetQuotesAsync(userId, cancellationToken);
             return items.Select(i => new QuoteDto(
                 i.Documento, 
                 i.Imagen, 

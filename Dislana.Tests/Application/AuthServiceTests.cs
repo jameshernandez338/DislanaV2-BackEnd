@@ -4,9 +4,6 @@ using Dislana.Domain.Auth.Entities;
 using Dislana.Domain.Auth.Interfaces;
 using FluentAssertions;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Dislana.Tests.Application
 {
@@ -14,6 +11,7 @@ namespace Dislana.Tests.Application
     {
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly Mock<IUserCredentialRepository> _credentialRepositoryMock;
+        private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock;
         private readonly Mock<IPasswordHasher> _passwordHasherMock;
         private readonly Mock<IJwtTokenGenerator> _jwtGeneratorMock;
 
@@ -23,12 +21,14 @@ namespace Dislana.Tests.Application
         {
             _userRepositoryMock = new Mock<IUserRepository>();
             _credentialRepositoryMock = new Mock<IUserCredentialRepository>();
+            _refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
             _passwordHasherMock = new Mock<IPasswordHasher>();
             _jwtGeneratorMock = new Mock<IJwtTokenGenerator>();
 
             _service = new AuthService(
                 _userRepositoryMock.Object,
                 _credentialRepositoryMock.Object,
+                _refreshTokenRepositoryMock.Object,
                 _passwordHasherMock.Object,
                 _jwtGeneratorMock.Object
             );
@@ -40,8 +40,8 @@ namespace Dislana.Tests.Application
             var request = new RegisterRequest("John", "Doe", "john@test.com", "123456");
 
             _userRepositoryMock
-                .Setup(x => x.GetUserByEmailAsync(request.Email, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UserEntity(1, request.Email, "John", "Doe", true));
+                .Setup(x => x.GetUserByUserNameAsync(request.Email, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserEntity(1, "admin", request.Email, "John", "Doe", true));
 
             var result = await _service.RegisterAsync(request, CancellationToken.None);
 
@@ -54,10 +54,10 @@ namespace Dislana.Tests.Application
             var request = new RegisterRequest("John", "Doe", "john@test.com", "123456");
 
             _userRepositoryMock
-                .Setup(x => x.GetUserByEmailAsync(request.Email, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetUserByUserNameAsync(request.Email, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserEntity?)null);
 
-            var createdUser = new UserEntity(1, request.Email, "John", "Doe", true);
+            var createdUser = new UserEntity(1, "admin", request.Email, "John", "Doe", true);
 
             _userRepositoryMock
                 .Setup(x => x.CreateUserWithCredentialAsync(
@@ -76,6 +76,10 @@ namespace Dislana.Tests.Application
                 .Setup(x => x.Generate(createdUser))
                 .Returns("token123");
 
+            _jwtGeneratorMock
+                .Setup(x => x.GenerateRefreshToken())
+                .Returns("refreshToken123");
+
             var result = await _service.RegisterAsync(request, CancellationToken.None);
 
             result.IsSuccess.Should().BeTrue();
@@ -87,7 +91,7 @@ namespace Dislana.Tests.Application
             var request = new LoginRequest("john@test.com", "123456");
 
             _userRepositoryMock
-                .Setup(x => x.GetUserByEmailAsync(request.Email, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetUserByUserNameAsync(request.UserName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserEntity?)null);
 
             var result = await _service.LoginAsync(request, CancellationToken.None);
@@ -100,10 +104,10 @@ namespace Dislana.Tests.Application
         {
             var request = new LoginRequest("john@test.com", "wrong");
 
-            var user = new UserEntity(1, request.Email, "John", "Doe", true);
+            var user = new UserEntity(1, "admin", request.UserName, "John", "Doe", true);
 
             _userRepositoryMock
-                .Setup(x => x.GetUserByEmailAsync(request.Email, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetUserByUserNameAsync(request.UserName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
             _credentialRepositoryMock
@@ -124,10 +128,10 @@ namespace Dislana.Tests.Application
         {
             var request = new LoginRequest("john@test.com", "123456");
 
-            var user = new UserEntity(1, request.Email, "John", "Doe", true);
+            var user = new UserEntity(1, "admin", request.UserName, "John", "Doe", true);
 
             _userRepositoryMock
-                .Setup(x => x.GetUserByEmailAsync(request.Email, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetUserByUserNameAsync(request.UserName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
             _credentialRepositoryMock

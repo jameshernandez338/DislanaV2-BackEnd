@@ -16,14 +16,12 @@ namespace Dislana.Api.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetList(CancellationToken cancellationToken)
         {
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
+            var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrWhiteSpace(login))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { message = "No se pudo obtener el ID del usuario." });
 
-            var items = await _quoteService.GetQuotesAsync(login, cancellationToken);
+            var items = await _quoteService.GetQuotesAsync(userId, cancellationToken);
             return Ok(items);
         }
 

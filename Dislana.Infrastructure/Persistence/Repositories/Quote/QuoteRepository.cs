@@ -11,13 +11,13 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Quote
 
         public QuoteRepository(IDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
-        public async Task<IEnumerable<QuoteEntity>> GetQuotesAsync(string login, CancellationToken cancellationToken)
+        public async Task<IEnumerable<QuoteEntity>> GetQuotesAsync(string userId, CancellationToken cancellationToken)
         {
             const string spName = "usp_getQuotes";
 
             var result = await _dbExecutor.QueryAsync<QuoteEntity>(
                 spName,
-                new { login = login },
+                new { login = userId },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 

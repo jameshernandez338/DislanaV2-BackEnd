@@ -72,6 +72,7 @@ builder.Services.AddScoped<IQuoteService, QuoteService>();
 // Infrastructure
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserCredentialRepository, UserCredentialRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IProductRepository,ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IStockRepository, StockRepository>();
@@ -82,10 +83,38 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IDbExecutor, DbExecutor>();
 builder.Services.AddTransient<DbConnectionFactory>();
 
+// Bind JwtSettings from configuration but allow explicit environment variable fallbacks
 var jwtSettings = builder.Configuration
     .GetSection("Jwt")
     .Get<JwtSettings>()
-    ?? throw new InvalidOperationException("JWT configuration missing");
+    ?? new JwtSettings();
+
+// Helper to resolve a configuration value preferring bound value, then configuration keys, then environment variables
+string ResolveConfig(string? current, params string[] keys)
+{
+    if (!string.IsNullOrWhiteSpace(current))
+        return current!;
+
+    foreach (var key in keys)
+    {
+        // First try configuration (supports appsettings and other providers)
+        var cfg = builder.Configuration[key];
+        if (!string.IsNullOrWhiteSpace(cfg)) return cfg;
+
+        // Then try environment variables (both hierarchical and flat conventions)
+        var env = Environment.GetEnvironmentVariable(key)
+                  ?? Environment.GetEnvironmentVariable(key.Replace(':', '_'))
+                  ?? Environment.GetEnvironmentVariable(key.ToUpperInvariant().Replace(':', '_'));
+
+        if (!string.IsNullOrWhiteSpace(env)) return env;
+    }
+
+    return string.Empty;
+}
+
+jwtSettings.Key = ResolveConfig(jwtSettings.Key, "Jwt:Key", "Jwt__Key", "JWT_KEY");
+jwtSettings.Issuer = ResolveConfig(jwtSettings.Issuer, "Jwt:Issuer", "Jwt__Issuer", "JWT_ISSUER");
+jwtSettings.Audience = ResolveConfig(jwtSettings.Audience, "Jwt:Audience", "Jwt__Audience", "JWT_AUDIENCE");
 
 if (string.IsNullOrWhiteSpace(jwtSettings.Key))
     throw new InvalidOperationException("JWT Key is not configured.");

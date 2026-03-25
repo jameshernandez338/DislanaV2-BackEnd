@@ -1,4 +1,5 @@
 ﻿using Dislana.Application.Auth.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dislana.Api.Controllers
@@ -34,6 +35,17 @@ namespace Dislana.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
         {
             var result = await _authService.LoginAsync(request, cancellationToken);
+
+            if (!result.IsSuccess)
+                return Unauthorized(new { message = result.Message });
+
+            return Ok(result);
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _authService.RefreshTokenAsync(request.RefreshToken, cancellationToken);
 
             if (!result.IsSuccess)
                 return Unauthorized(new { message = result.Message });

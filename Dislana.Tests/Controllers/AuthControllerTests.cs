@@ -27,7 +27,7 @@ namespace Dislana.Tests.Controllers
 
             _authServiceMock
                 .Setup(x => x.RegisterAsync(request, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(LoginResult.Success("token123", "John Doe"));
+                .ReturnsAsync(LoginResult.Success("token123", "refreshToken123", "John Doe"));
 
             // Act
             var result = await _controller.Register(request, CancellationToken.None);
@@ -71,7 +71,7 @@ namespace Dislana.Tests.Controllers
 
             _authServiceMock
                 .Setup(x => x.LoginAsync(request, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(LoginResult.Success("token123", "John Doe"));
+                .ReturnsAsync(LoginResult.Success("token123", "refreshToken123", "John Doe"));
 
             var result = await _controller.Login(request, CancellationToken.None);
 

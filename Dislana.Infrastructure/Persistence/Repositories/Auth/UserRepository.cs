@@ -71,27 +71,28 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             }, cancellationToken: cancellationToken);
         }
 
-        public async Task<UserEntity?> GetUserByEmailAsync(string email, CancellationToken cancellationToken)
+        public async Task<UserEntity?> GetUserByUserNameAsync(string userName, CancellationToken cancellationToken)
         {
             const string sql = @"
                 SELECT 
                     u.Id,
+                    u.UserName,
                     u.Email,
                     u.FirstName,
                     u.LastName,
                     u.IsActive
                 FROM Users u
-                WHERE u.Email = @Email
+                WHERE u.UserName = @UserName
             ";
 
             return await _dbExecutor.QuerySingleOrDefaultAsync<UserEntity>(
                 sql,
-                new { Email = email },
+                new { UserName = userName },
                 commandType: null,
                 cancellationToken: cancellationToken);
         }
 
-        public async Task<UserEntity?> GetUserByIdAsync(long userId)
+        public async Task<UserEntity?> GetUserByIdAsync(long userId, CancellationToken cancellationToken)
         {
             const string sql = @"
                 SELECT 
@@ -106,7 +107,9 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
 
             return await _dbExecutor.QuerySingleOrDefaultAsync<UserEntity>(
                 sql,
-                new { UserId = userId });
+                new { UserId = userId },
+                commandType: null,
+                cancellationToken: cancellationToken);
         }
     }
 }
