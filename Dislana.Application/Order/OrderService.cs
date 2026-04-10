@@ -12,7 +12,7 @@ namespace Dislana.Application.Order
 
         public OrderService(IOrderRepository orderRepository) => _orderRepository = orderRepository;
 
-        public async Task<OrderSaveResponseDto> SaveOrderAsync(string userName, OrderRequestDto request, string orillo, CancellationToken cancellationToken)
+        public async Task<OrderSaveResponseDto> SaveOrderAsync(string userName, OrderRequestDto request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(userName)) throw new ArgumentException("login is required", nameof(userName));
 
@@ -25,17 +25,35 @@ namespace Dislana.Application.Order
                         new XElement("Cantidad1", i.Cantidad1.ToString(CultureInfo.InvariantCulture)),
                         new XElement("CantidadB", i.CantidadB.ToString(CultureInfo.InvariantCulture)),
                         new XElement("Pvp", i.Pvp.ToString(CultureInfo.InvariantCulture)),
-                        new XElement("PvpB", i.PvpB.ToString(CultureInfo.InvariantCulture))
+                        new XElement("PvpB", i.PvpB.ToString(CultureInfo.InvariantCulture)),
+                        new XElement("Acabados",
+                            i.Acabados?.Select(a =>
+                                new XElement("Acabado",
+                                    new XElement("Nombre", a.Acabado),
+                                    new XElement("Texto", a.Texto ?? string.Empty),
+                                    new XElement("Valor", a.Valor.ToString(CultureInfo.InvariantCulture))
+                                )
+                            )
+                        )
                     )
                 )
             );
 
             var pedido = new XDocument(root).ToString(SaveOptions.DisableFormatting);
 
-            var repoResult = await _orderRepository.SaveOrderAsync(userName, pedido, orillo ?? string.Empty, cancellationToken);
+            var repoResult = await _orderRepository.SaveOrderAsync(userName, pedido, request.Observacion ?? string.Empty, cancellationToken);
 
             var message = repoResult?.Message ?? string.Empty;
             return new OrderSaveResponseDto(message);
+        }
+
+        public async Task<IEnumerable<FabricFinishDto>> GetFabricFinishesAsync(string userName, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(userName)) throw new ArgumentException("login is required", nameof(userName));
+
+            var entities = await _orderRepository.GetFabricFinishesAsync(userName, cancellationToken);
+
+            return entities.Select(e => new FabricFinishDto(e.Acabado, e.TieneTexto, string.Empty, e.Valor));
         }
     }
 }

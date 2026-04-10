@@ -5,6 +5,7 @@ namespace Dislana.Application.Order.DTOs
         decimal Cantidad1,
         decimal CantidadB,
         decimal Pvp,
-        decimal PvpB
+        decimal PvpB,
+        IReadOnlyList<FabricFinishDto> Acabados
     );
 }

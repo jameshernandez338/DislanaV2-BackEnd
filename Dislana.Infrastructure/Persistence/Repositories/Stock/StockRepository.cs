@@ -17,7 +17,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Stock
 
             var result = await _dbExecutor.QueryAsync<CommittedInventoryEntity>(
                 spName,
-                new { login = login, item = itemCode },
+                new { login, itemCode },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 
@@ -30,7 +30,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Stock
 
             var result = await _dbExecutor.QueryAsync<InventoryStatementEntity>(
                 spName,
-                new { login = login },
+                new { login },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 

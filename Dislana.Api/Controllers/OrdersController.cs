@@ -28,7 +28,21 @@ namespace Dislana.Api.Controllers
             if (string.IsNullOrWhiteSpace(userName))
                 return BadRequest(new { message = "No se pudo obtener el login del usuario." });
 
-            var result = await _orderService.SaveOrderAsync(userName, request, request.Orillo ?? string.Empty, cancellationToken);
+            var result = await _orderService.SaveOrderAsync(userName, request, cancellationToken);
+
+            return Ok(result);
+        }
+
+        // GET api/orders/fabric-finishes
+        [HttpGet("fabric-finishes")]
+        public async Task<IActionResult> GetFabricFinishes(CancellationToken cancellationToken)
+        {
+            var userName = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userName))
+                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
+
+            var result = await _orderService.GetFabricFinishesAsync(userName, cancellationToken);
 
             return Ok(result);
         }
