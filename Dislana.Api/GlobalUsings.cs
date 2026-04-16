@@ -16,6 +16,7 @@ global using Dislana.Application.Payment;
 global using Dislana.Application.Product;
 global using Dislana.Application.Quote;
 global using Dislana.Application.Stock;
+global using Dislana.Application.Transaction;
 global using Dislana.Application.Secrets;
 // Application service and interface namespaces used by Program.cs
 global using Dislana.Application.Auth.Interfaces;
@@ -24,6 +25,7 @@ global using Dislana.Application.Payment.Interfaces;
 global using Dislana.Application.Product.Interfaces;
 global using Dislana.Application.Quote.Interfaces;
 global using Dislana.Application.Stock.Interfaces;
+global using Dislana.Application.Transaction.Interfaces;
 
 // Domain interfaces
 global using Dislana.Domain.Auth.Interfaces;
@@ -32,6 +34,7 @@ global using Dislana.Domain.Payment.Interfaces;
 global using Dislana.Domain.Product.Interfaces;
 global using Dislana.Domain.Quote.Interfaces;
 global using Dislana.Domain.Stock.Interfaces;
+global using Dislana.Domain.Transaction.Interfaces;
 
 // Infrastructure types used in DI registration
 global using Dislana.Infrastructure.Configuration;
@@ -43,3 +46,4 @@ global using Dislana.Infrastructure.Persistence.Repositories.Payment;
 global using Dislana.Infrastructure.Persistence.Repositories.Product;
 global using Dislana.Infrastructure.Persistence.Repositories.Quote;
 global using Dislana.Infrastructure.Persistence.Repositories.Stock;
+global using Dislana.Infrastructure.Persistence.Repositories.Transaction;

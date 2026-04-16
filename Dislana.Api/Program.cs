@@ -68,6 +68,7 @@ builder.Services.AddSingleton<ISecretProvider>(sp =>
 
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IQuoteService, QuoteService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 // Infrastructure
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -77,6 +78,7 @@ builder.Services.AddScoped<IProductRepository,ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<IQuoteRepository, QuoteRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();

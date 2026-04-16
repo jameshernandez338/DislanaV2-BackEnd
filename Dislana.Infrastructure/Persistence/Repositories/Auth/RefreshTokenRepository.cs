@@ -5,6 +5,10 @@ using System.Data;
 
 namespace Dislana.Infrastructure.Persistence.Repositories.Auth
 {
+    /// <summary>
+    /// Repositorio de Infraestructura: Implementa persistencia de refresh tokens
+    /// Reconstruye entidades ricas desde la BD
+    /// </summary>
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly IDbExecutor _dbExecutor;
@@ -15,24 +19,39 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
         {
             const string spName = "usp_getRefreshToken";
 
-            var result = await _dbExecutor.QuerySingleOrDefaultAsync<RefreshTokenEntity>(
+            var dbToken = await _dbExecutor.QuerySingleOrDefaultAsync<RefreshTokenDto>(
                 spName,
                 new { token = token },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 
-            if (result == null) return null;
+            if (dbToken == null) 
+                return null;
 
-            return result;
+            // Reconstruir entidad rica desde los datos de la BD
+            return RefreshTokenEntity.Reconstitute(
+                token: dbToken.Token,
+                userId: dbToken.UserId,
+                expiresAt: dbToken.ExpiresAt,
+                createdAt: dbToken.CreatedAt,
+                isRevoked: dbToken.IsRevoked
+            );
         }
 
-        public async Task SaveRefreshTokenAsync(string token, long userId, DateTime expiresAt, CancellationToken cancellationToken)
+        public async Task SaveRefreshTokenAsync(
+            RefreshTokenEntity refreshToken, 
+            CancellationToken cancellationToken)
         {
             const string spName = "usp_saveRefreshToken";
 
             await _dbExecutor.ExecuteAsync(
                 spName,
-                new { token = token, userId = userId, expiresAt = expiresAt },
+                new
+                {
+                    token = refreshToken.Token,
+                    userId = refreshToken.UserId,
+                    expiresAt = refreshToken.ExpiresAt
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
         }
@@ -59,6 +78,9 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
                 cancellationToken: cancellationToken);
         }
 
+        /// <summary>
+        /// DTO para mapear datos desde la BD
+        /// </summary>
         private class RefreshTokenDto
         {
             public string Token { get; set; } = default!;

@@ -2,10 +2,27 @@
 
 namespace Dislana.Domain.Auth.Interfaces
 {
+    /// <summary>
+    /// Repositorio del Dominio: Define contrato para persistencia de usuarios
+    /// </summary>
     public interface IUserRepository
     {
-        Task<UserEntity?> CreateUserWithCredentialAsync(string name, string lastName, string email, string passwordHash, CancellationToken cancellationToken);
+        /// <summary>
+        /// Crea un nuevo usuario con sus credenciales
+        /// </summary>
+        Task<UserEntity?> CreateUserWithCredentialAsync(
+            UserEntity user,
+            UserCredentialEntity credential,
+            CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Obtiene un usuario por su nombre de usuario (email)
+        /// </summary>
         Task<UserEntity?> GetUserByUserNameAsync(string userName, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Obtiene un usuario por su ID
+        /// </summary>
         Task<UserEntity?> GetUserByIdAsync(long userId, CancellationToken cancellationToken);
     }
 }

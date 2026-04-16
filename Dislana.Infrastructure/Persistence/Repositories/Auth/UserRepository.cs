@@ -6,6 +6,10 @@ using Dislana.Infrastructure.Persistence.Dapper;
 
 namespace Dislana.Infrastructure.Persistence.Repositories.Auth
 {
+    /// <summary>
+    /// Repositorio de Infraestructura: Implementa persistencia de usuarios
+    /// Reconstruye entidades ricas desde la BD
+    /// </summary>
     public class UserRepository : IUserRepository
     {
         private readonly IDbExecutor _dbExecutor;
@@ -16,25 +20,23 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
         }
 
         public async Task<UserEntity?> CreateUserWithCredentialAsync(
-            string name,
-            string lastName,
-            string email,
-            string passwordHash,
+            UserEntity user,
+            UserCredentialEntity credential,
             CancellationToken cancellationToken)
         {
             const string createUserSql = @"
                 DECLARE @UserId BIGINT = NEXT VALUE FOR UserSequence;
 
                 INSERT INTO Users (Id, Email, FirstName, LastName, IsActive, CreatedAt)
-                VALUES (@UserId, @Email, @Name, @LastName, 1, GETDATE());
+                VALUES (@UserId, @Email, @FirstName, @LastName, 1, GETDATE());
 
                 SELECT 
                     Id,
+                    Email AS UserName,
                     Email,
                     FirstName,
                     LastName,
-                    IsActive,
-                    CreatedAt
+                    IsActive
                 FROM Users
                 WHERE Id = @UserId;
             ";
@@ -46,28 +48,45 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
 
             return await _dbExecutor.ExecuteInTransactionAsync(async (connection, transaction, ct) =>
             {
+                // Crear usuario
                 var userCmd = new CommandDefinition(
                     createUserSql,
-                    new { Name = name, LastName = lastName, Email = email },
+                    new
+                    {
+                        Email = user.Email.Value,
+                        FirstName = user.FirstName.Value,
+                        LastName = user.LastName.Value
+                    },
                     transaction: transaction,
                     cancellationToken: ct);
 
-                var user = await connection.QuerySingleOrDefaultAsync<UserEntity>(userCmd);
+                var dbUser = await connection.QuerySingleOrDefaultAsync<dynamic>(userCmd);
 
-                if (user is null)
-                {
+                if (dbUser is null)
                     throw new DomainException("No se pudo crear el usuario.");
-                }
 
+                // Crear credenciales
                 var credCmd = new CommandDefinition(
                     createCredentialSql,
-                    new { UserId = user.Id, PasswordHash = passwordHash },
+                    new
+                    {
+                        UserId = (long)dbUser.Id,
+                        PasswordHash = credential.PasswordHash.Value
+                    },
                     transaction: transaction,
                     cancellationToken: ct);
 
                 await connection.ExecuteAsync(credCmd);
 
-                return user;
+                // Reconstruir entidad rica desde los datos de la BD
+                return UserEntity.Reconstitute(
+                    id: (long)dbUser.Id,
+                    userName: (string)dbUser.UserName,
+                    email: (string)dbUser.Email,
+                    firstName: (string)dbUser.FirstName,
+                    lastName: (string)dbUser.LastName,
+                    isActive: (bool)dbUser.IsActive
+                );
             }, cancellationToken: cancellationToken);
         }
 
@@ -85,11 +104,24 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
                 WHERE u.UserName = @UserName
             ";
 
-            return await _dbExecutor.QuerySingleOrDefaultAsync<UserEntity>(
+            var dbUser = await _dbExecutor.QuerySingleOrDefaultAsync<dynamic>(
                 sql,
                 new { UserName = userName },
                 commandType: null,
                 cancellationToken: cancellationToken);
+
+            if (dbUser == null)
+                return null;
+
+            // Reconstruir entidad rica
+            return UserEntity.Reconstitute(
+                id: (long)dbUser.Id,
+                userName: (string)dbUser.UserName,
+                email: (string)dbUser.Email,
+                firstName: (string)dbUser.FirstName,
+                lastName: (string)dbUser.LastName,
+                isActive: (bool)dbUser.IsActive
+            );
         }
 
         public async Task<UserEntity?> GetUserByIdAsync(long userId, CancellationToken cancellationToken)
@@ -97,7 +129,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             const string sql = @"
                 SELECT 
                     u.Id,
-                    u.UserName,
+                    u.Email AS UserName,
                     u.Email,
                     u.FirstName,
                     u.LastName,
@@ -106,11 +138,24 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
                 WHERE u.Id = @UserId
             ";
 
-            return await _dbExecutor.QuerySingleOrDefaultAsync<UserEntity>(
+            var dbUser = await _dbExecutor.QuerySingleOrDefaultAsync<dynamic>(
                 sql,
                 new { UserId = userId },
                 commandType: null,
                 cancellationToken: cancellationToken);
+
+            if (dbUser == null)
+                return null;
+
+            // Reconstruir entidad rica
+            return UserEntity.Reconstitute(
+                id: (long)dbUser.Id,
+                userName: (string)dbUser.UserName,
+                email: (string)dbUser.Email,
+                firstName: (string)dbUser.FirstName,
+                lastName: (string)dbUser.LastName,
+                isActive: (bool)dbUser.IsActive
+            );
         }
     }
 }

@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dislana.Domain\Dislana.Domain.csproj" />
+    <ProjectReference Include="..\Dislana.Application\Dislana.Application.csproj" />
   </ItemGroup>
 
 </Project>

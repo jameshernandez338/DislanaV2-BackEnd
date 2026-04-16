@@ -39,9 +39,12 @@ namespace Dislana.Tests.Application
         {
             var request = new RegisterRequest("John", "Doe", "john@test.com", "123456");
 
+            // Usar Reconstitute en lugar del constructor
+            var existingUser = UserEntity.Reconstitute(1, "john@test.com", "john@test.com", "John", "Doe", true);
+
             _userRepositoryMock
                 .Setup(x => x.GetUserByUserNameAsync(request.Email, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UserEntity(1, "admin", request.Email, "John", "Doe", true));
+                .ReturnsAsync(existingUser);
 
             var result = await _service.RegisterAsync(request, CancellationToken.None);
 
@@ -57,20 +60,20 @@ namespace Dislana.Tests.Application
                 .Setup(x => x.GetUserByUserNameAsync(request.Email, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserEntity?)null);
 
-            var createdUser = new UserEntity(1, "admin", request.Email, "John", "Doe", true);
+            var createdUser = UserEntity.Reconstitute(1, "john@test.com", "john@test.com", "John", "Doe", true);
 
             _userRepositoryMock
                 .Setup(x => x.CreateUserWithCredentialAsync(
-                    request.Name,
-                    request.LastName,
-                    request.Email,
-                    It.IsAny<string>(),
+                    It.IsAny<UserEntity>(),
+                    It.IsAny<UserCredentialEntity>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(createdUser);
 
+            // Usar un hash realista (BCrypt tiene ~60 caracteres)
+            var validHash = "$2a$11$K6RrqQgz7G0s1xOeK6RrqOeK6RrqOeK6RrqOeK6RrqOeK6RrqOe";
             _passwordHasherMock
                 .Setup(x => x.Hash(request.Password))
-                .Returns("hashed");
+                .Returns(validHash);
 
             _jwtGeneratorMock
                 .Setup(x => x.Generate(createdUser))
@@ -79,6 +82,11 @@ namespace Dislana.Tests.Application
             _jwtGeneratorMock
                 .Setup(x => x.GenerateRefreshToken())
                 .Returns("refreshToken123");
+
+            // Mock para guardar refresh token
+            _refreshTokenRepositoryMock
+                .Setup(x => x.SaveRefreshTokenAsync(It.IsAny<RefreshTokenEntity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var result = await _service.RegisterAsync(request, CancellationToken.None);
 
@@ -104,18 +112,22 @@ namespace Dislana.Tests.Application
         {
             var request = new LoginRequest("john@test.com", "wrong");
 
-            var user = new UserEntity(1, "admin", request.UserName, "John", "Doe", true);
+            var user = UserEntity.Reconstitute(1, "john@test.com", "john@test.com", "John", "Doe", true);
 
             _userRepositoryMock
                 .Setup(x => x.GetUserByUserNameAsync(request.UserName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
+            // Usar un hash realista (BCrypt tiene ~60 caracteres)
+            var validHash = "$2a$11$K6RrqQgz7G0s1xOeK6RrqOeK6RrqOeK6RrqOeK6RrqOeK6RrqOe";
+            var credential = UserCredentialEntity.Reconstitute(user.Id, validHash, DateTime.UtcNow);
+
             _credentialRepositoryMock
                 .Setup(x => x.GetCredentialByUserIdAsync(user.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UserCredentialEntity(user.Id, "hash", DateTime.UtcNow));
+                .ReturnsAsync(credential);
 
             _passwordHasherMock
-                .Setup(x => x.Verify("wrong", "hash"))
+                .Setup(x => x.Verify("wrong", validHash))
                 .Returns(false);
 
             var result = await _service.LoginAsync(request, CancellationToken.None);
@@ -128,23 +140,41 @@ namespace Dislana.Tests.Application
         {
             var request = new LoginRequest("john@test.com", "123456");
 
-            var user = new UserEntity(1, "admin", request.UserName, "John", "Doe", true);
+            var user = UserEntity.Reconstitute(1, "john@test.com", "john@test.com", "John", "Doe", true);
 
             _userRepositoryMock
                 .Setup(x => x.GetUserByUserNameAsync(request.UserName, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
 
+            // Usar un hash realista (BCrypt tiene ~60 caracteres)
+            var validHash = "$2a$11$K6RrqQgz7G0s1xOeK6RrqOeK6RrqOeK6RrqOeK6RrqOeK6RrqOe";
+            var credential = UserCredentialEntity.Reconstitute(user.Id, validHash, DateTime.UtcNow);
+
             _credentialRepositoryMock
                 .Setup(x => x.GetCredentialByUserIdAsync(user.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UserCredentialEntity(user.Id, "hash", DateTime.UtcNow));
+                .ReturnsAsync(credential);
 
             _passwordHasherMock
-                .Setup(x => x.Verify("123456", "hash"))
+                .Setup(x => x.Verify("123456", validHash))
                 .Returns(true);
 
             _jwtGeneratorMock
                 .Setup(x => x.Generate(user))
                 .Returns("token123");
+
+            _jwtGeneratorMock
+                .Setup(x => x.GenerateRefreshToken())
+                .Returns("refreshToken123");
+
+            // Mock para revocar tokens anteriores
+            _refreshTokenRepositoryMock
+                .Setup(x => x.RevokeAllUserTokensAsync(user.Id, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            // Mock para guardar nuevo refresh token
+            _refreshTokenRepositoryMock
+                .Setup(x => x.SaveRefreshTokenAsync(It.IsAny<RefreshTokenEntity>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var result = await _service.LoginAsync(request, CancellationToken.None);
 
