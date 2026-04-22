@@ -77,13 +77,15 @@ namespace Dislana.Api.Controllers
 
         private void SetRefreshTokenCookie(string refreshToken)
         {
+            var isHttps = Request.IsHttps;
+
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                Secure = isHttps,
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(RefreshTokenExpirationDays),
-                Path = "/api/auth"
+                Path = "/"
             };
 
             Response.Cookies.Append(RefreshTokenCookieName, refreshToken, cookieOptions);
@@ -97,7 +99,7 @@ namespace Dislana.Api.Controllers
                 Secure = true,
                 SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddDays(-1),
-                Path = "/api/auth"
+                Path = "/"
             };
 
             Response.Cookies.Append(RefreshTokenCookieName, string.Empty, cookieOptions);
