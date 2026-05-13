@@ -23,12 +23,7 @@ namespace Dislana.Api.Controllers
             if (request.Items == null || !request.Items.Any())
                 return BadRequest(new { message = "La lista de items es requerida." });
 
-            var userName = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrWhiteSpace(userName))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var result = await _orderService.SaveOrderAsync(userName, request, cancellationToken);
+            var result = await _orderService.SaveOrderAsync(request, cancellationToken);
 
             return Ok(result);
         }
@@ -37,12 +32,7 @@ namespace Dislana.Api.Controllers
         [HttpGet("fabric-finishes")]
         public async Task<IActionResult> GetFabricFinishes(CancellationToken cancellationToken)
         {
-            var userName = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrWhiteSpace(userName))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var result = await _orderService.GetFabricFinishesAsync(userName, cancellationToken);
+            var result = await _orderService.GetFabricFinishesAsync(cancellationToken);
 
             return Ok(result);
         }

@@ -1,10 +1,10 @@
-using Dislana.Application.Order.DTOs;
+using Dislana.Application.Common.Interfaces;
 using Dislana.Application.Payment.DTOs;
 using Dislana.Application.Payment.Interfaces;
-using Dislana.Application.Payment.Utils;
-using Dislana.Domain.Payment.Interfaces;
-using Dislana.Application.Secrets;
 using Dislana.Application.Payment.Options;
+using Dislana.Application.Payment.Utils;
+using Dislana.Application.Secrets;
+using Dislana.Domain.Payment.Interfaces;
 
 namespace Dislana.Application.Payment
 {
@@ -13,11 +13,17 @@ namespace Dislana.Application.Payment
         private readonly IPaymentRepository _paymentRepository;
         private readonly ISecretProvider _secretProvider;
         private readonly WompiOptions _wompiOptions;
+        private readonly IUserContextService _userContextService;
 
-        public PaymentService(IPaymentRepository paymentRepository, ISecretProvider secretProvider, WompiOptions wompiOptions)
+        public PaymentService(
+            IPaymentRepository paymentRepository, 
+            ISecretProvider secretProvider,
+            IUserContextService userContextService,
+            WompiOptions wompiOptions)
         {
             _paymentRepository = paymentRepository;
             _secretProvider = secretProvider;
+            _userContextService = userContextService;
             _wompiOptions = wompiOptions ?? new WompiOptions();
         }
 
@@ -57,9 +63,14 @@ namespace Dislana.Application.Payment
             }
         }
 
-        public async Task<WompiPaymentDto> CreatePaymentAsync(string userName, PaymentRequestDto request, CancellationToken cancellationToken)
+        public async Task<WompiPaymentDto> CreatePaymentAsync(PaymentRequestDto request, CancellationToken cancellationToken)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
+
+            var userName = _userContextService.GetUserName();
+
+            if (string.IsNullOrWhiteSpace(userName))
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var reference = PaymentUtils.CreateReference();
             var pedido = PaymentUtils.BuildItemsXml(request.Items);
@@ -101,9 +112,14 @@ namespace Dislana.Application.Payment
             return new WompiPaymentDto(publicKey, currency, amountInCents, reference, signature, redirectUrl, urlBase);
         }
 
-        public async Task<PaymentResponseDto> SaveOrderOnlyAsync(string userName, PaymentRequestDto request, CancellationToken cancellationToken)
+        public async Task<PaymentResponseDto> SaveOrderOnlyAsync(PaymentRequestDto request, CancellationToken cancellationToken)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
+
+            var userName = _userContextService.GetUserName();
+
+            if (string.IsNullOrWhiteSpace(userName))
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var reference = PaymentUtils.CreateReference();
             var pedido = PaymentUtils.BuildItemsXml(request.Items);

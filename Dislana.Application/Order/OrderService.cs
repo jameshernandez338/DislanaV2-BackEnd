@@ -1,3 +1,4 @@
+using Dislana.Application.Common.Interfaces;
 using Dislana.Application.Order.DTOs;
 using Dislana.Application.Order.Interfaces;
 using Dislana.Domain.Order.Entities;
@@ -5,35 +6,32 @@ using Dislana.Domain.Order.Interfaces;
 
 namespace Dislana.Application.Order
 {
-    /// <summary>
-    /// Application Service: SOLO orquesta, NO contiene lógica de negocio
-    /// La lógica está en las entidades del Domain
-    /// Responsabilidades:
-    /// - Coordinar operaciones
-    /// - Mapear DTOs ↔ Domain Entities
-    /// - Gestionar transacciones
-    /// </summary>
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IUserContextService _userContextService;
 
-        public OrderService(IOrderRepository orderRepository)
+        public OrderService(
+            IOrderRepository orderRepository,
+            IUserContextService userContextService)
         {
             _orderRepository = orderRepository;
+            _userContextService = userContextService;
         }
 
         public async Task<OrderSaveResponseDto> SaveOrderAsync(
-            string userName,
             OrderRequestDto request,
             CancellationToken cancellationToken)
         {
-            // 1. Crear la entidad Order (el Domain valida)
+            var userName = _userContextService.GetUserName();
+
+            if (string.IsNullOrWhiteSpace(userName))
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+
             var order = OrderEntity.Create(userName, request.Observacion);
 
-            // 2. Agregar items (el Domain valida y gestiona la lógica)
             foreach (var itemDto in request.Items)
             {
-                // Crear item del dominio
                 var item = OrderItemEntity.Create(
                     itemDto.CodigoItem,
                     itemDto.Cantidad1,
@@ -42,7 +40,6 @@ namespace Dislana.Application.Order
                     itemDto.PvpB
                 );
 
-                // Agregar acabados si existen
                 if (itemDto.Acabados != null)
                 {
                     foreach (var acabadoDto in itemDto.Acabados)
@@ -57,23 +54,21 @@ namespace Dislana.Application.Order
                     }
                 }
 
-                // Agregar item a la orden (el Domain valida)
                 order.AddItem(item);
             }
 
-            // 3. Persistir (Infrastructure)
             var result = await _orderRepository.SaveAsync(order, cancellationToken);
 
-            // 4. Mapear resultado a DTO
             return new OrderSaveResponseDto(result?.Message ?? string.Empty);
         }
 
         public async Task<IEnumerable<FabricFinishDto>> GetFabricFinishesAsync(
-            string userName,
             CancellationToken cancellationToken)
         {
+            var userName = _userContextService.GetUserName();
+
             if (string.IsNullOrWhiteSpace(userName))
-                throw new ArgumentException("El usuario es requerido", nameof(userName));
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             // Obtener entidades del dominio
             var entities = await _orderRepository.GetFabricFinishesAsync(userName, cancellationToken);

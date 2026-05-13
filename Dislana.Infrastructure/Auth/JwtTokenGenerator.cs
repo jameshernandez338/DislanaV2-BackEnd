@@ -24,12 +24,12 @@ namespace Dislana.Infrastructure.Auth
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtSettings.Key));
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.FullName)
-
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim("UserName", user.UserName)
             };
 
             var credentials = new SigningCredentials(

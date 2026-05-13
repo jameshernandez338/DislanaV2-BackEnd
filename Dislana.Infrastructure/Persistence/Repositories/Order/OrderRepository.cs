@@ -1,3 +1,4 @@
+using Dislana.Domain.Common.Enums;
 using Dislana.Domain.Order.Entities;
 using Dislana.Domain.Order.Interfaces;
 using Dislana.Domain.Order.Results;
@@ -12,9 +13,10 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Order
     /// </summary>
     public class OrderRepository : IOrderRepository
     {
-        private readonly IDbExecutor _dbExecutor;
+        private readonly IContextualDbExecutor _dbExecutor;
+        private const DatabaseContext Context = DatabaseContext.Ecommerce;
 
-        public OrderRepository(IDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
+        public OrderRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
         /// <summary>
         /// Guarda una OrderEntity rica en la base de datos
@@ -34,6 +36,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Order
             var pedidoXml = order.ToXml();
 
             var message = await _dbExecutor.QuerySingleOrDefaultAsync<string?>(
+                Context,
                 spName,
                 new
                 {
@@ -59,6 +62,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Order
             const string spName = "usp_getFabricFinishes";
 
             return await _dbExecutor.QueryAsync<FabricFinishEntity>(
+                Context,
                 spName,
                 new { login },
                 commandType: CommandType.StoredProcedure,

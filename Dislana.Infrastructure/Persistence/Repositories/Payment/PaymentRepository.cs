@@ -1,21 +1,23 @@
-﻿using Dislana.Domain.Payment.Interfaces;
+﻿using Dislana.Domain.Common.Enums;
+using Dislana.Domain.Payment.Interfaces;
 using Dislana.Infrastructure.Persistence.Dapper;
-using Microsoft.IdentityModel.Abstractions;
 using System.Data;
 
 namespace Dislana.Infrastructure.Persistence.Repositories.Payment
 {
     public class PaymentRepository : IPaymentRepository
     {
-        private readonly IDbExecutor _dbExecutor;
+        private readonly IContextualDbExecutor _dbExecutor;
+        private const DatabaseContext Context = DatabaseContext.Ecommerce;
 
-        public PaymentRepository(IDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
+        public PaymentRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
         public async Task SavePaymentAsync(string userName, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken)
         {
             const string spName = "usp_savePaymentOrder";
 
             var message = await _dbExecutor.QuerySingleOrDefaultAsync<string?>(
+                Context,
                 spName,
                 new { 
                     userName = userName,
@@ -33,6 +35,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
             const string spName = "usp_updatePaymentStatus";
 
             await _dbExecutor.ExecuteAsync(
+                Context,
                 spName,
                 new { reference = reference, status = status, transactionId = transactionId, paymentMethod = paymentMethod, timestamp = timestamp },
                 commandType: CommandType.StoredProcedure);
@@ -43,8 +46,13 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
             const string spName = "usp_savePaymentLog";
 
             await _dbExecutor.ExecuteAsync(
+                Context,
                 spName,
-                new { reference = reference, payload = payload, message = message },
+                new { 
+                    reference, 
+                    payload,
+                    message 
+                },
                 commandType: CommandType.StoredProcedure);
         }
     }

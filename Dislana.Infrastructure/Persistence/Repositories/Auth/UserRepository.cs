@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Dislana.Domain.Auth.Entities;
 using Dislana.Domain.Auth.Interfaces;
+using Dislana.Domain.Common.Enums;
 using Dislana.Domain.Exceptions;
 using Dislana.Infrastructure.Persistence.Dapper;
 
@@ -12,9 +13,10 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
     /// </summary>
     public class UserRepository : IUserRepository
     {
-        private readonly IDbExecutor _dbExecutor;
+        private readonly IContextualDbExecutor _dbExecutor;
+        private const DatabaseContext Context = DatabaseContext.Ecommerce;
 
-        public UserRepository(IDbExecutor dbExecutor)
+        public UserRepository(IContextualDbExecutor dbExecutor)
         {
             _dbExecutor = dbExecutor;
         }
@@ -46,7 +48,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
                 VALUES (@UserId, @PasswordHash, GETDATE());
             ";
 
-            return await _dbExecutor.ExecuteInTransactionAsync(async (connection, transaction, ct) =>
+            return await _dbExecutor.ExecuteInTransactionAsync(Context, async (connection, transaction, ct) =>
             {
                 // Crear usuario
                 var userCmd = new CommandDefinition(
@@ -105,6 +107,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             ";
 
             var dbUser = await _dbExecutor.QuerySingleOrDefaultAsync<dynamic>(
+                Context,
                 sql,
                 new { UserName = userName },
                 commandType: null,
@@ -139,6 +142,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             ";
 
             var dbUser = await _dbExecutor.QuerySingleOrDefaultAsync<dynamic>(
+                Context,
                 sql,
                 new { UserId = userId },
                 commandType: null,

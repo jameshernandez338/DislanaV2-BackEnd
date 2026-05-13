@@ -1,5 +1,6 @@
 using Dislana.Domain.Auth.Entities;
 using Dislana.Domain.Auth.Interfaces;
+using Dislana.Domain.Common.Enums;
 using Dislana.Infrastructure.Persistence.Dapper;
 using System.Data;
 
@@ -11,15 +12,17 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
     /// </summary>
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
-        private readonly IDbExecutor _dbExecutor;
+        private readonly IContextualDbExecutor _dbExecutor;
+        private const DatabaseContext Context = DatabaseContext.Ecommerce;
 
-        public RefreshTokenRepository(IDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
+        public RefreshTokenRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
         public async Task<RefreshTokenEntity?> GetByTokenAsync(string token, CancellationToken cancellationToken)
         {
             const string spName = "usp_getRefreshToken";
 
             var dbToken = await _dbExecutor.QuerySingleOrDefaultAsync<RefreshTokenDto>(
+                Context,
                 spName,
                 new { token = token },
                 commandType: CommandType.StoredProcedure,
@@ -45,6 +48,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             const string spName = "usp_saveRefreshToken";
 
             await _dbExecutor.ExecuteAsync(
+                Context,
                 spName,
                 new
                 {
@@ -61,6 +65,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             const string spName = "usp_revokeRefreshToken";
 
             await _dbExecutor.ExecuteAsync(
+                Context,
                 spName,
                 new { token = token },
                 commandType: CommandType.StoredProcedure,
@@ -72,6 +77,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             const string spName = "usp_revokeAllUserRefreshTokens";
 
             await _dbExecutor.ExecuteAsync(
+                Context,
                 spName,
                 new { userId = userId },
                 commandType: CommandType.StoredProcedure,

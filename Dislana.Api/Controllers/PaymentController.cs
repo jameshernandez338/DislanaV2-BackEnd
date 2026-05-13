@@ -23,12 +23,7 @@ namespace Dislana.Api.Controllers
             if (request.Items == null || !request.Items.Any())
                 return BadRequest(new { message = "La lista de items es requerida." });
 
-            var userName = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrWhiteSpace(userName))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var payment = await _paymentService.CreatePaymentAsync(userName, request, cancellationToken);
+            var payment = await _paymentService.CreatePaymentAsync(request, cancellationToken);
             return Ok(payment);
         }
 
@@ -42,12 +37,7 @@ namespace Dislana.Api.Controllers
             if (request.Items == null || !request.Items.Any())
                 return BadRequest(new { message = "La lista de items es requerida." });
 
-            var userName = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrWhiteSpace(userName))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var result = await _paymentService.SaveOrderOnlyAsync(userName, request, cancellationToken);
+            var result = await _paymentService.SaveOrderOnlyAsync(request, cancellationToken);
             return Ok(result);
         }
 

@@ -4,8 +4,8 @@ namespace Dislana.Application.Payment.Interfaces
 {
     public interface IPaymentService
     {
-        Task<WompiPaymentDto> CreatePaymentAsync(string userName, PaymentRequestDto request, CancellationToken cancellationToken);
-        Task<PaymentResponseDto> SaveOrderOnlyAsync(string userName, PaymentRequestDto request, CancellationToken cancellationToken);
+        Task<WompiPaymentDto> CreatePaymentAsync(PaymentRequestDto request, CancellationToken cancellationToken);
+        Task<PaymentResponseDto> SaveOrderOnlyAsync(PaymentRequestDto request, CancellationToken cancellationToken);
         Task ProcessWebhookAsync(WompiWebhookRequest request);
     }
 }

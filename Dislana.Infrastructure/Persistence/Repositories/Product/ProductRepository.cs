@@ -1,4 +1,5 @@
-﻿using Dislana.Domain.Product.Entities;
+﻿using Dislana.Domain.Common.Enums;
+using Dislana.Domain.Product.Entities;
 using Dislana.Domain.Product.Interfaces;
 using Dislana.Infrastructure.Persistence.Dapper;
 using System.Data;
@@ -7,15 +8,17 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
 {
     public class ProductRepository : IProductRepository
     {
-        private readonly IDbExecutor _dbExecutor;
+        private readonly IContextualDbExecutor _dbExecutor;
+        private const DatabaseContext Context = DatabaseContext.Ecommerce;
 
-        public ProductRepository(IDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
+        public ProductRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
         public async Task<IEnumerable<FilterEntity>> GetFiltersByTipoAsync(string type, CancellationToken cancellationToken)
         {
             const string spName = "usp_getFilterByType";
 
             var rows = await _dbExecutor.QueryAsync<dynamic>(
+                Context,
                 spName,
                 new { tipo = type },
                 commandType: CommandType.StoredProcedure,
@@ -35,6 +38,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             const string spName = "usp_getProductsByType";
 
             var rows = await _dbExecutor.QueryAsync<ProductListEntity>(
+                Context,
                 spName,
                 new { type = type },
                 commandType: CommandType.StoredProcedure,
@@ -48,6 +52,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             const string spName = "usp_getProductDetail";
 
             var result = await _dbExecutor.QuerySingleOrDefaultAsync<ProductDetailEntity>(
+                Context,
                 spName,
                 new { codigoItem = itemCode },
                 commandType: CommandType.StoredProcedure,
@@ -61,6 +66,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             const string spName = "usp_getFeaturesByItemCode";
 
             var rows = await _dbExecutor.QueryAsync<dynamic>(
+                Context,
                 spName,
                 new { codigoItem = itemCode },
                 commandType: CommandType.StoredProcedure,
@@ -80,6 +86,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             const string spName = "usp_getSimilarProductsByItemCode";
 
             var result = await _dbExecutor.QueryAsync<SimilarProductEntity>(
+                Context,
                 spName,
                 new { codigoItem = itemCode },
                 commandType: CommandType.StoredProcedure,

@@ -1,5 +1,6 @@
 ﻿using Dislana.Domain.Auth.Entities;
 using Dislana.Domain.Auth.Interfaces;
+using Dislana.Domain.Common.Enums;
 using Dislana.Infrastructure.Persistence.Dapper;
 
 namespace Dislana.Infrastructure.Persistence.Repositories.Auth
@@ -10,9 +11,10 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
     /// </summary>
     public class UserCredentialRepository : IUserCredentialRepository
     {
-        private readonly IDbExecutor _dbExecutor;
+        private readonly IContextualDbExecutor _dbExecutor;
+        private const DatabaseContext Context = DatabaseContext.Ecommerce;
 
-        public UserCredentialRepository(IDbExecutor dbExecutor)
+        public UserCredentialRepository(IContextualDbExecutor dbExecutor)
         {
             _dbExecutor = dbExecutor;
         }
@@ -29,6 +31,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Auth
             """;
 
             var dbCredential = await _dbExecutor.QuerySingleOrDefaultAsync<UserCredentialDto>(
+                Context,
                 sql,
                 new { UserId = userId },
                 commandType: null,

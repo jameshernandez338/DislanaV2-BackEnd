@@ -17,6 +17,9 @@ builder.Host.UseSerilog();
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt"));
 
+builder.Services.Configure<OpenAISettings>(
+    builder.Configuration.GetSection("OpenAI"));
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -49,6 +52,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Application
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserContextService, UserContextService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
@@ -69,6 +73,8 @@ builder.Services.AddSingleton<ISecretProvider>(sp =>
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IQuoteService, QuoteService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IChatAssistantService, ChatAssistantService>();
+builder.Services.AddScoped<IConnectionStringResolver, ConnectionStringResolver>();
 
 // Infrastructure
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -82,8 +88,14 @@ builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-builder.Services.AddScoped<IDbExecutor, DbExecutor>();
+builder.Services.AddScoped<IContextualDbExecutor, ContextualDbExecutor>();
+builder.Services.AddScoped<IChatInvoiceRepository, ChatInvoiceRepository>();
+builder.Services.AddSingleton<IChatSessionRepository, InMemoryChatSessionRepository>();
+builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
+builder.Services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();
 builder.Services.AddTransient<DbConnectionFactory>();
+
+builder.Services.AddHttpContextAccessor();
 
 // Bind JwtSettings from configuration but allow explicit environment variable fallbacks
 var jwtSettings = builder.Configuration
