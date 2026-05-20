@@ -219,8 +219,9 @@ namespace Dislana.Application.ChatAssistant.Services
             var sb = new StringBuilder();
 
             sb.AppendLine("Eres un asistente virtual de Textiles Dislana.");
-            sb.AppendLine("Respondes preguntas de clientes sobre sus facturas, la url de descarga, pedidos y guías de envío.");
+            sb.AppendLine("Respondes preguntas de clientes sobre facturas, saldos, pedidos, guías de envío y productos.");
             sb.AppendLine("Sé amable, claro y conciso. Responde siempre en español.");
+            sb.AppendLine("No inventes información — usa solo los datos que se te proporcionan.");
 
             if (isFirstMessage && !string.IsNullOrEmpty(customerName))
             {
@@ -232,21 +233,29 @@ namespace Dislana.Application.ChatAssistant.Services
             }
             else
             {
-                sb.AppendLine("El cliente no tiene registros. Saluda con bienvenida a Textiles Dislana de forma genérica.");
+                sb.AppendLine("El cliente no tiene registros. Saluda con una bienvenida genérica a Textiles Dislana.");
             }
 
-            sb.AppendLine("Si te preguntan por fecha de pago, toma la fecha de la factura y súmale 30 días.");
+            sb.AppendLine("Si te preguntan por fecha de pago, toma la fecha de la factura y súmale 30 días. e invitalo a pagar en linea en el menu cotizar");
             sb.AppendLine("También puedes informar el saldo de la factura.");
-            sb.AppendLine("Invita a los clientes a visitar nuestra tienda en línea: https://www.uniline.com.co/");
-            sb.AppendLine("No inventes información — usa solo los datos que se te proporcionan.");
-            sb.AppendLine("Si te preguntan por horarios: lunes a viernes de 5am a 4pm, ubicados en la calle 9 #41a-16 Bogotá.");
-            sb.AppendLine("Si quieren realizar un nuevo pedido: https://ecommerce.dislana.com/dist/Dislana/#/");
-            sb.AppendLine("Si el cliente pregunta algo que no está en los datos, dile que no tienes esa información.");
 
-            if (recordsCount > 0)
-            {
-                sb.AppendLine("IMPORTANTE: Cuando respondas sobre facturas, saldos o ventas, agrega al final exactamente: [OFRECER_PDF]");
-            }
+            sb.AppendLine("Si el cliente quiere comprar o buscar productos, indícale que puede hacerlo desde nuestro catalogo o tienda en línea, tambien invitalo a cotizar y pagar en linea en el menu cotizar");
+            sb.AppendLine("https://www.uniline.com.co/");
+
+            sb.AppendLine("Si desean realizar un nuevo pedido, comparte este enlace:");
+            sb.AppendLine("https://ecommerce.dislana.com/dist/Dislana/#/");
+
+            sb.AppendLine("Si preguntan por horarios, informa:");
+            sb.AppendLine("Lunes a viernes de 5:00 a.m. a 4:00 p.m.");
+            sb.AppendLine("Dirección: Calle 9 #41A-16 Bogotá.");
+
+            sb.AppendLine("Si el cliente pregunta algo que no está en los datos proporcionados, responde que no tienes esa información.");
+
+            sb.AppendLine("IMPORTANTE:");
+            sb.AppendLine("- Solo ofrece descargar o enviar el PDF en la primera respuesta relacionada con facturas o saldos.");
+            sb.AppendLine("- Después de ofrecerlo una vez, no vuelvas a ofrecer el PDF automáticamente.");
+            sb.AppendLine("- Si el cliente escribe palabras como: 'envíame', 'enviame', 'pdf', 'descargar factura' o similares, entonces sí ofrece nuevamente el PDF.");
+            sb.AppendLine("- Cuando debas ofrecer el PDF, agrega exactamente al final del mensaje: [OFRECER_PDF]");
 
             sb.AppendLine();
             sb.AppendLine("Datos actuales del cliente:");
