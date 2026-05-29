@@ -90,6 +90,7 @@ builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IContextualDbExecutor, ContextualDbExecutor>();
 builder.Services.AddScoped<IChatInvoiceRepository, ChatInvoiceRepository>();
+builder.Services.AddScoped<IMensajeProgramadoRepository, MensajeProgramadoRepository>();
 builder.Services.AddSingleton<IChatSessionRepository, InMemoryChatSessionRepository>();
 builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();

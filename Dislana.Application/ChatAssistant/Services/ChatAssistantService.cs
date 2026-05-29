@@ -17,19 +17,22 @@ namespace Dislana.Application.ChatAssistant.Services
         private readonly IChatInvoiceRepository _chatInvoiceRepository;
         private readonly IUserContextService _userContextService;
         private readonly IPdfReportGenerator _pdfReportGenerator;
+        private readonly IMensajeProgramadoRepository _mensajeProgramadoRepository;
 
         public ChatAssistantService(
             IChatSessionRepository sessionRepository,
             IOpenAIService openAIService,
             IChatInvoiceRepository chatInvoiceRepository,
             IUserContextService userContextService,
-            IPdfReportGenerator pdfReportGenerator)
+            IPdfReportGenerator pdfReportGenerator,
+            IMensajeProgramadoRepository mensajeProgramadoRepository)
         {
             _sessionRepository = sessionRepository;
             _openAIService = openAIService;
             _chatInvoiceRepository = chatInvoiceRepository;
             _userContextService = userContextService;
             _pdfReportGenerator = pdfReportGenerator;
+            _mensajeProgramadoRepository = mensajeProgramadoRepository;
         }
 
         public async Task<ChatMessageResponse> ProcessMessageAsync(ChatMessageRequest request, CancellationToken cancellationToken)
@@ -113,11 +116,15 @@ namespace Dislana.Application.ChatAssistant.Services
             // Preparar prompt para OpenAI
             var isFirstMessage = session.History.Count == 0;
 
+            // Obtener mensajes programados activos
+            var mensajesProgramados = await _mensajeProgramadoRepository.GetMensajesActivosAsync(cancellationToken);
+
             var systemPrompt = BuildSystemPrompt(
                 isFirstMessage,
                 customerName,
                 customerData,
-                invoiceRecords.Count
+                invoiceRecords.Count,
+                mensajesProgramados
             );
 
             // Agregar mensaje del usuario al historial
@@ -214,7 +221,8 @@ namespace Dislana.Application.ChatAssistant.Services
             bool isFirstMessage,
             string? customerName,
             string customerData,
-            int recordsCount)
+            int recordsCount,
+            IEnumerable<MensajeProgramadoEntity> mensajesProgramados)
         {
             var sb = new StringBuilder();
 
@@ -226,6 +234,17 @@ namespace Dislana.Application.ChatAssistant.Services
             if (isFirstMessage && !string.IsNullOrEmpty(customerName))
             {
                 sb.AppendLine($"Es el primer mensaje del cliente. Salúdalo por su nombre: \"{customerName}\" y dale la bienvenida a Textiles Dislana.");
+
+                // Agregar mensajes programados al saludo
+                var mensajesActivos = mensajesProgramados.Where(m => m.EsActivo()).ToList();
+                if (mensajesActivos.Any())
+                {
+                    sb.AppendLine("IMPORTANTE: Después del saludo, agrega la siguiente información:");
+                    foreach (var mensaje in mensajesActivos)
+                    {
+                        sb.AppendLine($"- {mensaje.Mensaje}");
+                    }
+                }
             }
             else if (!string.IsNullOrEmpty(customerName))
             {
