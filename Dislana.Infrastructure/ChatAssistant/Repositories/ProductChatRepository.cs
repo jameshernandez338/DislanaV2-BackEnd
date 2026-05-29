@@ -1,3 +1,4 @@
+using Dislana.Application.Common.Interfaces;
 using Dislana.Domain.ChatAssistant.Entities;
 using Dislana.Domain.ChatAssistant.Interfaces;
 using Dislana.Domain.Common.Enums;
@@ -9,15 +10,25 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
     public class ProductChatRepository : IProductChatRepository
     {
         private readonly IContextualDbExecutor _dbExecutor;
-        private const DatabaseContext Context = DatabaseContext.Ecommerce;
+        private readonly ICacheService _cacheService;
+        private const DatabaseContext Context = DatabaseContext.ChatBot;
+        private const string CacheKeyPrefix = "chat_products";
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromHours(1);
 
-        public ProductChatRepository(IContextualDbExecutor dbExecutor)
+        public ProductChatRepository(IContextualDbExecutor dbExecutor, ICacheService cacheService)
         {
             _dbExecutor = dbExecutor;
+            _cacheService = cacheService;
         }
 
         public async Task<IEnumerable<ProductEntity>> GetActiveProductsAsync(CancellationToken cancellationToken)
         {
+            var cacheKey = $"{CacheKeyPrefix}:active";
+
+            var cachedData = await _cacheService.GetAsync<List<ProductEntity>>(cacheKey, cancellationToken);
+            if (cachedData != null)
+                return cachedData;
+
             var query = @"
                 SELECT 
                     grupo AS Grupo,
@@ -43,7 +54,7 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
 
             var dtos = await _dbExecutor.QueryAsync<ProductDto>(Context, query, null, null, cancellationToken);
 
-            return dtos.Select(dto => new ProductEntity
+            var entities = dtos.Select(dto => new ProductEntity
             {
                 Grupo = dto.Grupo?.Trim() ?? string.Empty,
                 CodItem = dto.CodItem?.Trim() ?? string.Empty,
@@ -63,7 +74,11 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
                 NomCiu = dto.NOM_CIU?.Trim() ?? string.Empty,
                 NomDep = dto.NOM_DEP?.Trim() ?? string.Empty,
                 Detalle = dto.DETALLE?.Trim() ?? string.Empty
-            });
+            }).ToList();
+
+            await _cacheService.SetAsync(cacheKey, entities, CacheExpiration, cancellationToken);
+
+            return entities;
         }
     }
 }

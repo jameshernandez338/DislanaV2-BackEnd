@@ -1,4 +1,5 @@
-﻿using Dislana.Domain.ChatAssistant.Entities;
+﻿using Dislana.Application.Common.Interfaces;
+using Dislana.Domain.ChatAssistant.Entities;
 using Dislana.Domain.ChatAssistant.Interfaces;
 using Dislana.Domain.Common.Enums;
 using Dislana.Infrastructure.ChatAssistant.DTOs;
@@ -9,15 +10,25 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
     public class ChatInvoiceRepository : IChatInvoiceRepository
     {
         private readonly IContextualDbExecutor _dbExecutor;
+        private readonly ICacheService _cacheService;
         private const DatabaseContext Context = DatabaseContext.ChatBot;
+        private const string CacheKeyPrefix = "chat_invoices";
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromHours(1);
 
-        public ChatInvoiceRepository(IContextualDbExecutor dbExecutor)
+        public ChatInvoiceRepository(IContextualDbExecutor dbExecutor, ICacheService cacheService)
         {
             _dbExecutor = dbExecutor;
+            _cacheService = cacheService;
         }
 
         public async Task<IEnumerable<ChatInvoiceEntity>> GetChatInvoiceByUserIdAsync(string userId, CancellationToken cancellationToken)
         {
+            var cacheKey = $"{CacheKeyPrefix}:user:{userId}";
+
+            var cachedData = await _cacheService.GetAsync<List<ChatInvoiceEntity>>(cacheKey, cancellationToken);
+            if (cachedData != null)
+                return cachedData;
+
             var query = @"
                 SELECT 
                     LTRIM(RTRIM(TypeDocument)) AS TypeDocument,
@@ -39,7 +50,7 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
             var parameters = new { userId };
             var dtos = await _dbExecutor.QueryAsync<ChatInvoiceDto>(Context, query, parameters, null, cancellationToken);
 
-            return dtos.Select(dto => new ChatInvoiceEntity
+            var entities = dtos.Select(dto => new ChatInvoiceEntity
             {
                 TypeDocument = dto.TypeDocument,
                 Number = dto.Number,
@@ -53,7 +64,11 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
                 LinkGuia = dto.LinkGuia,
                 Enviado = dto.Enviado,
                 EnviadoGuia = dto.EnviadoGuia
-            });
+            }).ToList();
+
+            await _cacheService.SetAsync(cacheKey, entities, CacheExpiration, cancellationToken);
+
+            return entities;
         }
     }
 }

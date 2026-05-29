@@ -1,3 +1,4 @@
+using Dislana.Application.Common.Interfaces;
 using Dislana.Domain.ChatAssistant.Entities;
 using Dislana.Domain.ChatAssistant.Interfaces;
 using Dislana.Domain.Common.Enums;
@@ -9,11 +10,15 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
     public class PaymentChatRepository : IPaymentChatRepository
     {
         private readonly IContextualDbExecutor _dbExecutor;
+        private readonly ICacheService _cacheService;
         private const DatabaseContext Context = DatabaseContext.ChatBot;
+        private const string CacheKeyPrefix = "chat_payments";
+        private static readonly TimeSpan CacheExpiration = TimeSpan.FromHours(1);
 
-        public PaymentChatRepository(IContextualDbExecutor dbExecutor)
+        public PaymentChatRepository(IContextualDbExecutor dbExecutor, ICacheService cacheService)
         {
             _dbExecutor = dbExecutor;
+            _cacheService = cacheService;
         }
 
         public async Task<IEnumerable<PaymentEntity>> GetPaymentsByUserIdAsync(string userId, CancellationToken cancellationToken)
@@ -22,6 +27,12 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
             {
                 return Enumerable.Empty<PaymentEntity>();
             }
+
+            var cacheKey = $"{CacheKeyPrefix}:user:{userId}";
+
+            var cachedData = await _cacheService.GetAsync<List<PaymentEntity>>(cacheKey, cancellationToken);
+            if (cachedData != null)
+                return cachedData;
 
             var query = @"
                 SELECT 
@@ -43,7 +54,7 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
                 null, 
                 cancellationToken);
 
-            return dtos.Select(dto => new PaymentEntity
+            var entities = dtos.Select(dto => new PaymentEntity
             {
                 Login = dto.Login,
                 CodCli = dto.CodCli?.Trim() ?? string.Empty,
@@ -52,7 +63,11 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
                 Pago = dto.Pago,
                 Referencia = dto.Referencia?.Trim() ?? string.Empty,
                 Fecha = dto.Fecha
-            });
+            }).ToList();
+
+            await _cacheService.SetAsync(cacheKey, entities, CacheExpiration, cancellationToken);
+
+            return entities;
         }
     }
 }
