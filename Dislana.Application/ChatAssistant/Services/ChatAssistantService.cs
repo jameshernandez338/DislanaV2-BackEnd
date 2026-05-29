@@ -17,7 +17,9 @@ namespace Dislana.Application.ChatAssistant.Services
         private readonly IChatInvoiceRepository _chatInvoiceRepository;
         private readonly IUserContextService _userContextService;
         private readonly IPdfReportGenerator _pdfReportGenerator;
-        private readonly IMensajeProgramadoRepository _mensajeProgramadoRepository;
+        private readonly IScheduledMessageRepository _scheduledMessageRepository;
+        private readonly IProductChatRepository _productChatRepository;
+        private readonly IPaymentChatRepository _paymentChatRepository;
 
         public ChatAssistantService(
             IChatSessionRepository sessionRepository,
@@ -25,14 +27,18 @@ namespace Dislana.Application.ChatAssistant.Services
             IChatInvoiceRepository chatInvoiceRepository,
             IUserContextService userContextService,
             IPdfReportGenerator pdfReportGenerator,
-            IMensajeProgramadoRepository mensajeProgramadoRepository)
+            IScheduledMessageRepository scheduledMessageRepository,
+            IProductChatRepository productChatRepository,
+            IPaymentChatRepository paymentChatRepository)
         {
             _sessionRepository = sessionRepository;
             _openAIService = openAIService;
             _chatInvoiceRepository = chatInvoiceRepository;
             _userContextService = userContextService;
             _pdfReportGenerator = pdfReportGenerator;
-            _mensajeProgramadoRepository = mensajeProgramadoRepository;
+            _scheduledMessageRepository = scheduledMessageRepository;
+            _productChatRepository = productChatRepository;
+            _paymentChatRepository = paymentChatRepository;
         }
 
         public async Task<ChatMessageResponse> ProcessMessageAsync(ChatMessageRequest request, CancellationToken cancellationToken)
@@ -48,6 +54,16 @@ namespace Dislana.Application.ChatAssistant.Services
             var invoiceRecords = invoiceRecordsResult.ToList();
             var customerData = FormatInvoiceData(invoiceRecords);
             var customerName = invoiceRecords.Count > 0 ? invoiceRecords[0].Customer.Trim() : null;
+
+            // Obtener productos disponibles
+            var availableProducts = await _productChatRepository.GetActiveProductsAsync(cancellationToken);
+            var productList = availableProducts.ToList();
+            var productData = FormatProductData(productList);
+
+            // Obtener pagos del cliente
+            var userPayments = await _paymentChatRepository.GetPaymentsByUserIdAsync(userIdString, cancellationToken);
+            var paymentList = userPayments.ToList();
+            var paymentData = FormatPaymentData(paymentList);
 
             var session = _sessionRepository.GetSession(request.SessionId);
             if (session == null)
@@ -66,7 +82,7 @@ namespace Dislana.Application.ChatAssistant.Services
 
             if (session.WaitingForPdf)
             {
-                var msg = userMessage.ToLower();
+                var message = userMessage.ToLower();
                 var confirmWords = new[]
                 {
                     "sí", "si", "yes", "claro", "ok", "dale", "listo", "quiero",
@@ -79,10 +95,10 @@ namespace Dislana.Application.ChatAssistant.Services
                     "no", "nope", "no gracias", "no quiero", "no necesito"
                 };
 
-                var confirms = confirmWords.Any(p => msg.Contains(p));
-                var rejects = rejectWords.Any(p => msg.Contains(p));
+                var isConfirmed = confirmWords.Any(word => message.Contains(word));
+                var isRejected = rejectWords.Any(word => message.Contains(word));
 
-                if (confirms)
+                if (isConfirmed)
                 {
                     session.WaitingForPdf = false;
                     _sessionRepository.SaveSession(session);
@@ -95,7 +111,7 @@ namespace Dislana.Application.ChatAssistant.Services
                     );
                 }
 
-                if (rejects)
+                if (isRejected)
                 {
                     session.WaitingForPdf = false;
                     session.PendingPdfType = string.Empty;
@@ -117,14 +133,18 @@ namespace Dislana.Application.ChatAssistant.Services
             var isFirstMessage = session.History.Count == 0;
 
             // Obtener mensajes programados activos
-            var mensajesProgramados = await _mensajeProgramadoRepository.GetMensajesActivosAsync(cancellationToken);
+            var scheduledMessages = await _scheduledMessageRepository.GetActiveMessagesAsync(cancellationToken);
 
             var systemPrompt = BuildSystemPrompt(
                 isFirstMessage,
                 customerName,
                 customerData,
                 invoiceRecords.Count,
-                mensajesProgramados
+                scheduledMessages,
+                productData,
+                productList.Count,
+                paymentData,
+                paymentList.Count
             );
 
             // Agregar mensaje del usuario al historial
@@ -217,17 +237,86 @@ namespace Dislana.Application.ChatAssistant.Services
             return sb.ToString();
         }
 
+        private static string FormatProductData(List<ProductEntity> products)
+        {
+            if (products.Count == 0)
+                return "No hay productos disponibles en este momento.";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("PRODUCTOS DISPONIBLES:");
+            sb.AppendLine($"- Total de productos: {products.Count}");
+            sb.AppendLine();
+
+            // Agrupar por categoría
+            var groupedByCategory = products.GroupBy(p => p.Categoria);
+
+            foreach (var categoryGroup in groupedByCategory.Take(10))
+            {
+                sb.AppendLine($"\nCategoría: {categoryGroup.Key}");
+                foreach (var product in categoryGroup.Take(5))
+                {
+                    sb.AppendLine($"  - {product.Nombre} ({product.CodItem})");
+                    sb.AppendLine($"    Descripción: {product.DesItem}");
+                    sb.AppendLine($"    Precio: ${product.PVP.ToString("N0", new CultureInfo("es-CO"))}");
+                    if (product.PVP_DCTO > 0 && product.PVP_DCTO < product.PVP)
+                    {
+                        sb.AppendLine($"    Precio con descuento: ${product.PVP_DCTO.ToString("N0", new CultureInfo("es-CO"))} ({product.PorDes}% OFF)");
+                    }
+                    sb.AppendLine($"    Disponible: {product.Disponible} unidades");
+                    sb.AppendLine($"    Color: {product.Color}");
+                    sb.AppendLine($"    Ubicación: {product.NomCiu}, {product.NomDep}");
+                }
+            }
+
+            sb.AppendLine("\n(Mostrando un resumen de productos. Hay más disponibles en el catálogo.)");
+
+            return sb.ToString();
+        }
+
+        private static string FormatPaymentData(List<PaymentEntity> payments)
+        {
+            if (payments.Count == 0)
+                return "No se encontraron pagos registrados para este cliente.";
+
+            var totalPayments = payments.Sum(p => p.Pago);
+
+            var sb = new StringBuilder();
+            sb.AppendLine("HISTORIAL DE PAGOS:");
+            sb.AppendLine($"- Total pagado: ${totalPayments.ToString("N0", new CultureInfo("es-CO"))}");
+            sb.AppendLine($"- Número de pagos: {payments.Count}");
+            sb.AppendLine();
+            sb.AppendLine("DETALLE DE PAGOS:");
+
+            for (int i = 0; i < payments.Count; i++)
+            {
+                var payment = payments[i];
+
+                sb.AppendLine($"\nPago {i + 1}:");
+                sb.AppendLine($"- Tipo: {payment.Tipo}");
+                sb.AppendLine($"- Número: {payment.Numero}");
+                sb.AppendLine($"- Fecha: {payment.Fecha:dd/MM/yyyy}");
+                sb.AppendLine($"- Monto: ${payment.Pago.ToString("N0", new CultureInfo("es-CO"))}");
+                sb.AppendLine($"- Referencia: {(string.IsNullOrEmpty(payment.Referencia) ? "No disponible" : payment.Referencia)}");
+            }
+
+            return sb.ToString();
+        }
+
         private static string BuildSystemPrompt(
             bool isFirstMessage,
             string? customerName,
             string customerData,
             int recordsCount,
-            IEnumerable<MensajeProgramadoEntity> mensajesProgramados)
+            IEnumerable<ScheduledMessageEntity> scheduledMessages,
+            string productData,
+            int productCount,
+            string paymentData,
+            int paymentCount)
         {
             var sb = new StringBuilder();
 
             sb.AppendLine("Eres un asistente virtual de Textiles Dislana.");
-            sb.AppendLine("Respondes preguntas de clientes sobre facturas, saldos, pedidos, guías de envío y productos.");
+            sb.AppendLine("Respondes preguntas de clientes sobre facturas, saldos, pedidos, guías de envío, productos y pagos.");
             sb.AppendLine("Sé amable, claro y conciso. Responde siempre en español.");
             sb.AppendLine("No inventes información — usa solo los datos que se te proporcionan.");
 
@@ -236,13 +325,13 @@ namespace Dislana.Application.ChatAssistant.Services
                 sb.AppendLine($"Es el primer mensaje del cliente. Salúdalo por su nombre: \"{customerName}\" y dale la bienvenida a Textiles Dislana.");
 
                 // Agregar mensajes programados al saludo
-                var mensajesActivos = mensajesProgramados.Where(m => m.EsActivo()).ToList();
-                if (mensajesActivos.Any())
+                var activeMessages = scheduledMessages.Where(m => m.IsActive()).ToList();
+                if (activeMessages.Any())
                 {
                     sb.AppendLine("IMPORTANTE: Después del saludo, agrega la siguiente información:");
-                    foreach (var mensaje in mensajesActivos)
+                    foreach (var message in activeMessages)
                     {
-                        sb.AppendLine($"- {mensaje.Mensaje}");
+                        sb.AppendLine($"- {message.Message}");
                     }
                 }
             }
@@ -279,6 +368,25 @@ namespace Dislana.Application.ChatAssistant.Services
             sb.AppendLine();
             sb.AppendLine("Datos actuales del cliente:");
             sb.AppendLine(customerData);
+
+            if (productCount > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("CATÁLOGO DE PRODUCTOS DISPONIBLES:");
+                sb.AppendLine("Cuando el cliente pregunte por productos, usa esta información para responder:");
+                sb.AppendLine(productData);
+                sb.AppendLine();
+                sb.AppendLine("Para más detalles de productos o realizar un pedido, siempre dirige al cliente a:");
+                sb.AppendLine("https://www.uniline.com.co/ o https://ecommerce.dislana.com/dist/Dislana/#/");
+            }
+
+            if (paymentCount > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("HISTORIAL DE PAGOS DEL CLIENTE:");
+                sb.AppendLine("Cuando el cliente pregunte por pagos realizados, usa esta información:");
+                sb.AppendLine(paymentData);
+            }
 
             return sb.ToString();
         }

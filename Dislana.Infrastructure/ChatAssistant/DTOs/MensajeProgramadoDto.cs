@@ -1,6 +1,6 @@
 namespace Dislana.Infrastructure.ChatAssistant.DTOs
 {
-    public class MensajeProgramadoDto
+    public class ScheduledMessageDto
     {
         public DateTime FechaInicial { get; set; }
         public DateTime FechaFinal { get; set; }

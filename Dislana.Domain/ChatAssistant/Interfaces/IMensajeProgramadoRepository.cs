@@ -2,8 +2,8 @@ using Dislana.Domain.ChatAssistant.Entities;
 
 namespace Dislana.Domain.ChatAssistant.Interfaces
 {
-    public interface IMensajeProgramadoRepository
+    public interface IScheduledMessageRepository
     {
-        Task<IEnumerable<MensajeProgramadoEntity>> GetMensajesActivosAsync(CancellationToken cancellationToken);
+        Task<IEnumerable<ScheduledMessageEntity>> GetActiveMessagesAsync(CancellationToken cancellationToken);
     }
 }

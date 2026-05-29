@@ -1,15 +1,15 @@
 namespace Dislana.Domain.ChatAssistant.Entities
 {
-    public class MensajeProgramadoEntity
+    public class ScheduledMessageEntity
     {
-        public DateTime FechaInicial { get; set; }
-        public DateTime FechaFinal { get; set; }
-        public string Mensaje { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string Message { get; set; } = string.Empty;
 
-        public bool EsActivo()
+        public bool IsActive()
         {
             var now = DateTime.Now.Date;
-            return now >= FechaInicial.Date && now <= FechaFinal.Date;
+            return now >= StartDate.Date && now <= EndDate.Date;
         }
     }
 }

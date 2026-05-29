@@ -6,17 +6,17 @@ using Dislana.Infrastructure.Persistence.Dapper;
 
 namespace Dislana.Infrastructure.ChatAssistant.Repositories
 {
-    public class MensajeProgramadoRepository : IMensajeProgramadoRepository
+    public class ScheduledMessageRepository : IScheduledMessageRepository
     {
         private readonly IContextualDbExecutor _dbExecutor;
         private const DatabaseContext Context = DatabaseContext.ChatBot;
 
-        public MensajeProgramadoRepository(IContextualDbExecutor dbExecutor)
+        public ScheduledMessageRepository(IContextualDbExecutor dbExecutor)
         {
             _dbExecutor = dbExecutor;
         }
 
-        public async Task<IEnumerable<MensajeProgramadoEntity>> GetMensajesActivosAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<ScheduledMessageEntity>> GetActiveMessagesAsync(CancellationToken cancellationToken)
         {
             var query = @"
                 SELECT 
@@ -27,13 +27,13 @@ namespace Dislana.Infrastructure.ChatAssistant.Repositories
                 WHERE CAST(GETDATE() AS DATE) >= CAST(FechaInicial AS DATE) 
                   AND CAST(GETDATE() AS DATE) <= CAST(FechaFinal AS DATE)";
 
-            var dtos = await _dbExecutor.QueryAsync<MensajeProgramadoDto>(Context, query, null, null, cancellationToken);
+            var dtos = await _dbExecutor.QueryAsync<ScheduledMessageDto>(Context, query, null, null, cancellationToken);
 
-            return dtos.Select(dto => new MensajeProgramadoEntity
+            return dtos.Select(dto => new ScheduledMessageEntity
             {
-                FechaInicial = dto.FechaInicial,
-                FechaFinal = dto.FechaFinal,
-                Mensaje = dto.Mensaje
+                StartDate = dto.FechaInicial,
+                EndDate = dto.FechaFinal,
+                Message = dto.Mensaje
             });
         }
     }
