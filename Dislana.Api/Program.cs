@@ -74,6 +74,7 @@ builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IQuoteService, QuoteService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IChatAssistantService, ChatAssistantService>();
+builder.Services.AddScoped<IAccountStatementService, AccountStatementService>();
 builder.Services.AddScoped<IConnectionStringResolver, ConnectionStringResolver>();
 
 // Infrastructure
@@ -86,6 +87,7 @@ builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<IQuoteRepository, QuoteRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IAccountStatementRepository, AccountStatementRepository>();
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IContextualDbExecutor, ContextualDbExecutor>();
@@ -97,6 +99,22 @@ builder.Services.AddSingleton<IChatSessionRepository, InMemoryChatSessionReposit
 builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();
 builder.Services.AddTransient<DbConnectionFactory>();
+
+// ============================================================================
+// REDIS CACHE - Comentado temporalmente hasta tener proveedor de Redis
+// ============================================================================
+// var redisConnectionString = builder.Configuration["Redis:ConnectionString"] 
+//     ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
+//     ?? "localhost:6379";
+// 
+// builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+//     ConnectionMultiplexer.Connect(redisConnectionString));
+// 
+// builder.Services.AddScoped<ICacheService, RedisCacheService>();
+// ============================================================================
+
+// Cache temporal sin Redis (usa NullCacheService - no almacena nada, siempre consulta BD)
+builder.Services.AddScoped<ICacheService, NullCacheService>();
 
 builder.Services.AddHttpContextAccessor();
 

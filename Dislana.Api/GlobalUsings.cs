@@ -18,6 +18,7 @@ global using Dislana.Application.Product;
 global using Dislana.Application.Quote;
 global using Dislana.Application.Stock;
 global using Dislana.Application.Transaction;
+global using Dislana.Application.AccountStatement;
 global using Dislana.Application.Secrets;
 // Application service and interface namespaces used by Program.cs
 global using Dislana.Application.Auth.Interfaces;
@@ -28,6 +29,7 @@ global using Dislana.Application.Product.Interfaces;
 global using Dislana.Application.Quote.Interfaces;
 global using Dislana.Application.Stock.Interfaces;
 global using Dislana.Application.Transaction.Interfaces;
+global using Dislana.Application.AccountStatement.Interfaces;
 global using Dislana.Application.ChatAssistant.Interfaces;
 global using Dislana.Application.ChatAssistant.Services;
 
@@ -39,6 +41,7 @@ global using Dislana.Domain.Product.Interfaces;
 global using Dislana.Domain.Quote.Interfaces;
 global using Dislana.Domain.Stock.Interfaces;
 global using Dislana.Domain.Transaction.Interfaces;
+global using Dislana.Domain.AccountStatement.Interfaces;
 global using Dislana.Domain.ChatAssistant.Interfaces;
 
 // Infrastructure types used in DI registration
@@ -53,7 +56,12 @@ global using Dislana.Infrastructure.Persistence.Repositories.Product;
 global using Dislana.Infrastructure.Persistence.Repositories.Quote;
 global using Dislana.Infrastructure.Persistence.Repositories.Stock;
 global using Dislana.Infrastructure.Persistence.Repositories.Transaction;
+global using Dislana.Infrastructure.Persistence.Repositories.AccountStatement;
 global using Dislana.Infrastructure.ChatAssistant.Repositories;
 global using Dislana.Infrastructure.ChatAssistant.Services;
 global using Dislana.Infrastructure.Services.Pdf;
 global using Dislana.Infrastructure.Services;
+global using Dislana.Infrastructure.Services.Cache;
+
+// Redis - Comentado temporalmente hasta tener proveedor
+// global using StackExchange.Redis;
