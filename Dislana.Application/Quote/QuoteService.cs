@@ -1,3 +1,4 @@
+using Dislana.Application.Common.Interfaces;
 using Dislana.Application.Quote.DTOs;
 using Dislana.Application.Quote.Interfaces;
 using Dislana.Domain.Quote.Entities;
@@ -8,13 +9,21 @@ namespace Dislana.Application.Quote
     public class QuoteService : IQuoteService
     {
         private readonly IQuoteRepository _quoteRepository;
+        private readonly IUserContextService _userContextService;
 
-        public QuoteService(IQuoteRepository quoteRepository) => _quoteRepository = quoteRepository;
+        public QuoteService(
+          IQuoteRepository quoteRepository,
+          IUserContextService userContextService)
+        {
+            _quoteRepository = quoteRepository;
+            _userContextService = userContextService;
+        }
 
         public async Task<IReadOnlyList<QuoteDto>> GetQuotesAsync(string userId, CancellationToken cancellationToken)
         {
             var items = await _quoteRepository.GetQuotesAsync(userId, cancellationToken);
             return items.Select(i => new QuoteDto(
+                i.Grupo,
                 i.Documento, 
                 i.Imagen, 
                 i.Codigo, 
@@ -25,14 +34,21 @@ namespace Dislana.Application.Quote
                 i.Saldo, 
                 i.Separados,
                 i.Cantidad,
-                i.PrecioTotal)
+                i.PrecioTotal,
+                i.PrecioAnticipo)
             ).ToList()
              .AsReadOnly();
         }
 
-        public async Task<CustomerTaxDto?> GetCustomerTaxesAsync(string login, CancellationToken cancellationToken)
+        public async Task<CustomerTaxDto?> GetCustomerTaxesAsync(CancellationToken cancellationToken)
         {
-            var entity = await _quoteRepository.GetCustomerTaxesAsync(login, cancellationToken);
+            var userIdString = _userContextService.GetId();
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in context");
+            }
+
+            var entity = await _quoteRepository.GetCustomerTaxesAsync(userId, cancellationToken);
             if (entity == null) return null;
 
             return new CustomerTaxDto(
@@ -49,17 +65,23 @@ namespace Dislana.Application.Quote
             );
         }
 
-        public async Task<IReadOnlyList<CustomerBalanceEntryDto>> GetCustomerBalanceAsync(string login, string type, CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<CustomerBalanceEntryDto>> GetCustomerBalanceAsync(string type, CancellationToken cancellationToken)
         {
+            var userIdString = _userContextService.GetId();
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in context");
+            }
+
             IEnumerable<CustomerBalanceEntryEntity> items;
 
             // choose repository method based on type
             items = type switch
             {
-                "saldoAFavor" => await _quoteRepository.GetCustomerOverdueBalance(login, cancellationToken),
-                "cartera" => await _quoteRepository.GetCustomerCreditBalance(login, cancellationToken),
-                "apin" => await _quoteRepository.GetCustomerApin(login, cancellationToken),
-                _ => await _quoteRepository.GetCustomerOverdueBalance(login, cancellationToken)
+                "saldoAFavor" => await _quoteRepository.GetCustomerOverdueBalance(userId, cancellationToken),
+                "cartera" => await _quoteRepository.GetCustomerCreditBalance(userId, cancellationToken),
+                "apin" => await _quoteRepository.GetCustomerApin(userId, cancellationToken),
+                _ => await _quoteRepository.GetCustomerOverdueBalance(userId, cancellationToken)
             };
 
             return items.Select(i => new CustomerBalanceEntryDto(i.Observacion, i.Tipo, i.Numero, i.Fecha, i.Valor))

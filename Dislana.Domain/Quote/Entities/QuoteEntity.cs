@@ -2,7 +2,8 @@ namespace Dislana.Domain.Quote.Entities
 {
     public class QuoteEntity
     {
-        public string Documento { get; set; }
+        public string Grupo { get; set; } = default!;
+        public string Documento { get; set; } = default!;
         public string Imagen { get; private set; } = default!;
         public string Codigo { get; private set; } = default!;
         public string Acabado { get; private set; } = default!;
@@ -13,22 +14,6 @@ namespace Dislana.Domain.Quote.Entities
         public decimal Separados { get; private set; }
         public decimal Cantidad { get; private set; }
         public decimal PrecioTotal { get; private set; }
-
-        private QuoteEntity() { }
-
-        public QuoteEntity(string documento, string imagen, string codigo, string acabado, string descripcion, string calidad, string linea, decimal saldo, decimal separados, decimal cantidad, decimal precioTotal )
-        {
-            Documento = documento;
-            Imagen = imagen;
-            Codigo = codigo;
-            Acabado = acabado;
-            Descripcion = descripcion;
-            Calidad = calidad;
-            Linea = linea;
-            Saldo = saldo;
-            Separados = separados;
-            Cantidad = cantidad;
-            PrecioTotal = precioTotal;
-        }
+        public decimal PrecioAnticipo { get; private set; }
     }
 }

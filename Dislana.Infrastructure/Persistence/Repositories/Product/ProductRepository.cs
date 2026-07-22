@@ -33,14 +33,17 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             return list;
         }
 
-        public async Task<IEnumerable<ProductListEntity>> GetProductsByTypeAsync(string type, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ProductListEntity>> GetProductsByTypeAsync(string type, int userId, CancellationToken cancellationToken)
         {
             const string spName = "usp_getProductsByType";
 
             var rows = await _dbExecutor.QueryAsync<ProductListEntity>(
                 Context,
                 spName,
-                new { type = type },
+                new { 
+                    type,
+                    userId
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 

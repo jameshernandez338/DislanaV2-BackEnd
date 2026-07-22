@@ -29,14 +29,7 @@ namespace Dislana.Api.Controllers
         [HttpGet("customer-taxes")]
         public async Task<IActionResult> GetCustomerTaxes(CancellationToken cancellationToken)
         {
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrWhiteSpace(login))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var balance = await _quoteService.GetCustomerTaxesAsync(login, cancellationToken);
+            var balance = await _quoteService.GetCustomerTaxesAsync(cancellationToken);
             if (balance == null)
                 return NotFound();
 
@@ -47,14 +40,7 @@ namespace Dislana.Api.Controllers
         [HttpGet("customer-balance")]
         public async Task<IActionResult> GetCustomerBalance([FromQuery] string type, CancellationToken cancellationToken)
         {
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrWhiteSpace(login))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var items = await _quoteService.GetCustomerBalanceAsync(login, type, cancellationToken);
+            var items = await _quoteService.GetCustomerBalanceAsync(type, cancellationToken);
             return Ok(items);
         }
     }

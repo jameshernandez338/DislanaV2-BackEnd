@@ -1,4 +1,5 @@
-﻿using Dislana.Application.Product.DTOs;
+﻿using Dislana.Application.Common.Interfaces;
+using Dislana.Application.Product.DTOs;
 using Dislana.Application.Product.Interfaces;
 using Dislana.Domain.Product.Interfaces;
 
@@ -7,7 +8,15 @@ namespace Dislana.Application.Product
     public class ProductService : IProductService
     {
         private readonly IProductRepository _productRepository;
-        public ProductService(IProductRepository repo) => _productRepository = repo;
+        private readonly IUserContextService _userContextService;
+
+        public ProductService(
+           IProductRepository productRepository,
+           IUserContextService userContextService)
+        {
+            _productRepository = productRepository;
+            _userContextService = userContextService;
+        }
 
         public async Task<IReadOnlyList<FilterItemDto>> GetFiltersAsync(string type, CancellationToken cancellationToken)
         {
@@ -19,7 +28,13 @@ namespace Dislana.Application.Product
 
         public async Task<IReadOnlyList<ProductListDto>> GetProductsAsync(string type, CancellationToken cancellationToken)
         {
-            var items = await _productRepository.GetProductsByTypeAsync(type, cancellationToken);
+            var userIdString = _userContextService.GetId();
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in context");
+            }
+
+            var items = await _productRepository.GetProductsByTypeAsync(type, userId, cancellationToken);
             return items.Select(i => new ProductListDto(
                     i.CodigoItem,
                     i.DescripcionItem,

@@ -50,19 +50,56 @@ namespace Dislana.Application.ChatAssistant.Services
                 throw new UnauthorizedAccessException("User ID not found in context");
             }
 
+            var userMessage = request.Message.Trim();
+
+            // Detectar intención
+            var normalizedMessage = userMessage.ToLowerInvariant();
+
+            var needsProducts =
+                normalizedMessage.Contains("producto") ||
+                normalizedMessage.Contains("catalogo") ||
+                normalizedMessage.Contains("catálogo") ||
+                normalizedMessage.Contains("comprar") ||
+                normalizedMessage.Contains("pedido");
+
+            var needsPayments =
+                normalizedMessage.Contains("pago") ||
+                normalizedMessage.Contains("abono") ||
+                normalizedMessage.Contains("consignación");
+
             var invoiceRecordsResult = await _chatInvoiceRepository.GetChatInvoiceByUserIdAsync(userIdString, cancellationToken);
             var invoiceRecords = invoiceRecordsResult.ToList();
             var customerData = FormatInvoiceData(invoiceRecords);
             var customerName = invoiceRecords.Count > 0 ? invoiceRecords[0].Customer.Trim() : null;
 
-            // Obtener productos disponibles
-            var availableProducts = await _productChatRepository.GetActiveProductsAsync(cancellationToken);
-            var productList = availableProducts.ToList();
+            // Cargar solo si se necesita
+            Task<IEnumerable<ProductEntity>>? productTask = null;
+            Task<IEnumerable<PaymentEntity>>? paymentTask = null;
+
+            if (needsProducts)
+            {
+                productTask = _productChatRepository
+                    .GetActiveProductsAsync(cancellationToken);
+            }
+
+            if (needsPayments)
+            {
+                paymentTask = _paymentChatRepository
+                    .GetPaymentsByUserIdAsync(
+                        userIdString,
+                        cancellationToken);
+            }
+
+            if (productTask is not null)
+                await productTask;
+
+            if (paymentTask is not null)
+                await paymentTask;
+
+            var productList = productTask is not null ? productTask.Result.ToList() : new List<ProductEntity>();
             var productData = FormatProductData(productList);
 
-            // Obtener pagos del cliente
-            var userPayments = await _paymentChatRepository.GetPaymentsByUserIdAsync(userIdString, cancellationToken);
-            var paymentList = userPayments.ToList();
+            var paymentList = paymentTask is not null ? paymentTask.Result.ToList() : new List<PaymentEntity>();
             var paymentData = FormatPaymentData(paymentList);
 
             var session = _sessionRepository.GetSession(request.SessionId);
@@ -77,8 +114,6 @@ namespace Dislana.Application.ChatAssistant.Services
                     PendingPdfType = string.Empty
                 };
             }
-
-            var userMessage = request.Message.Trim();
 
             if (session.WaitingForPdf)
             {
@@ -147,6 +182,10 @@ namespace Dislana.Application.ChatAssistant.Services
                 paymentList.Count
             );
 
+            session.History = session.History
+                .TakeLast(8)
+                .ToList();
+
             // Agregar mensaje del usuario al historial
             session.History.Add(new ChatMessageEntity
             {
@@ -178,11 +217,10 @@ namespace Dislana.Application.ChatAssistant.Services
                 Content = responseText
             });
 
-            // Mantener solo los últimos 10 mensajes
-            if (session.History.Count > 10)
-            {
-                session.History = session.History.Skip(session.History.Count - 10).ToList();
-            }
+            // Mantener solo los últimos 8 mensajes
+            session.History = session.History
+                .TakeLast(8)
+                .ToList();
 
             if (offerPdf)
             {
