@@ -50,14 +50,17 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             return rows;
         }
 
-        public async Task<ProductDetailEntity?> GetProductDetailByItemCodeAsync(string itemCode, CancellationToken cancellationToken)
+        public async Task<ProductDetailEntity?> GetProductDetailByItemCodeAsync(string itemCode, int userId, CancellationToken cancellationToken)
         {
             const string spName = "usp_getProductDetail";
 
             var result = await _dbExecutor.QuerySingleOrDefaultAsync<ProductDetailEntity>(
                 Context,
                 spName,
-                new { codigoItem = itemCode },
+                new { 
+                    codigoItem = itemCode, 
+                    login = userId 
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 
@@ -84,14 +87,17 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Product
             return list;
         }
 
-        public async Task<IEnumerable<SimilarProductEntity>> GetSimilarProductsByItemCodeAsync(string itemCode, CancellationToken cancellationToken)
+        public async Task<IEnumerable<SimilarProductEntity>> GetSimilarProductsByItemCodeAsync(string itemCode, int userId, CancellationToken cancellationToken)
         {
             const string spName = "usp_getSimilarProductsByItemCode";
 
             var result = await _dbExecutor.QueryAsync<SimilarProductEntity>(
                 Context,
                 spName,
-                new { codigoItem = itemCode },
+                new { 
+                    codigoItem = itemCode,
+                    login = userId
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);            
 

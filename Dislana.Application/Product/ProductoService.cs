@@ -59,7 +59,13 @@ namespace Dislana.Application.Product
 
         public async Task<ProductDetailDto?> GetProductDetailAsync(string itemCode, CancellationToken cancellationToken)
         {
-            var detailEntity = await _productRepository.GetProductDetailByItemCodeAsync(itemCode, cancellationToken);
+            var userIdString = _userContextService.GetId();
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in context");
+            }
+
+            var detailEntity = await _productRepository.GetProductDetailByItemCodeAsync(itemCode, userId, cancellationToken);
             if (detailEntity == null)
                 return null;
 
@@ -68,7 +74,7 @@ namespace Dislana.Application.Product
                 .ToList()
                 .AsReadOnly();
 
-            var similars = (await _productRepository.GetSimilarProductsByItemCodeAsync(itemCode, cancellationToken))
+            var similars = (await _productRepository.GetSimilarProductsByItemCodeAsync(itemCode, userId, cancellationToken))
                 .Select(s => new SimilarProductDto(
                     s.CodigoItem,
                     s.Imagen,

@@ -19,14 +19,7 @@ namespace Dislana.Api.Controllers
             if (string.IsNullOrWhiteSpace(itemCode))
                 return BadRequest(new { message = "El parámetro 'itemCode' es requerido." });
 
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrWhiteSpace(login))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var items = await _stockService.GetCommittedInventoryAsync(login, itemCode, cancellationToken);
+            var items = await _stockService.GetCommittedInventoryAsync(itemCode, cancellationToken);
             return Ok(items);
         }
 
@@ -34,14 +27,7 @@ namespace Dislana.Api.Controllers
         [HttpGet("statement")]
         public async Task<IActionResult> GetInventoryStatement(CancellationToken cancellationToken)
         {
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrWhiteSpace(login))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var items = await _stockService.GetInventoryStatementAsync(login, cancellationToken);
+            var items = await _stockService.GetInventoryStatementAsync(cancellationToken);
             return Ok(items);
         }
     }
