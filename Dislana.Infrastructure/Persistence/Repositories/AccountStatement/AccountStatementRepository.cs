@@ -17,6 +17,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.AccountStatement
             string login,
             DateTime startDate,
             DateTime endDate,
+            string? documentType,
             CancellationToken cancellationToken)
         {
             const string spName = "usp_getExtracto";
@@ -24,7 +25,12 @@ namespace Dislana.Infrastructure.Persistence.Repositories.AccountStatement
             var result = await _dbExecutor.QueryAsync<AccountStatementDbModel>(
                 Context,
                 spName,
-                new { cliente = login, fecha1 = startDate, fecha2 = endDate },
+                new { 
+                    cliente = login, 
+                    fecha1 = startDate, 
+                    fecha2 = endDate,
+                    tipo = documentType
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 

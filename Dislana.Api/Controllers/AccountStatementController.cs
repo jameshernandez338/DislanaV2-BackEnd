@@ -1,3 +1,4 @@
+using Dislana.Application.AccountStatement.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,20 +14,19 @@ namespace Dislana.Api.Controllers
         public AccountStatementController(IAccountStatementService accountStatementService) 
             => _accountStatementService = accountStatementService;
 
-        // GET api/account-statement?startDate=2024-01-01&endDate=2024-12-31
+        // GET api/account-statement?startDate=2024-01-01&endDate=2024-12-31&documentType=...
         [HttpGet]
         public async Task<IActionResult> GetAccountStatement(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate,
+            [FromQuery] AccountStatementRequestDto request,
             CancellationToken cancellationToken)
         {
-            if (startDate == default || endDate == default)
+            if (request.StartDate == default || request.EndDate == default)
                 return BadRequest(new { message = "Las fechas de inicio y fin son requeridas." });
 
-            if (startDate > endDate)
+            if (request.StartDate > request.EndDate)
                 return BadRequest(new { message = "La fecha de inicio no puede ser mayor a la fecha de fin." });
 
-            var result = await _accountStatementService.GetAccountStatementAsync(startDate, endDate, cancellationToken);
+            var result = await _accountStatementService.GetAccountStatementAsync(request, cancellationToken);
 
             return Ok(result);
         }

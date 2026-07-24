@@ -45,7 +45,7 @@ namespace Dislana.Application.Quote
             var userIdString = _userContextService.GetId();
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID not found in context");
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
             }
 
             var entity = await _quoteRepository.GetCustomerTaxesAsync(userId, cancellationToken);
@@ -70,7 +70,7 @@ namespace Dislana.Application.Quote
             var userIdString = _userContextService.GetId();
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID not found in context");
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
             }
 
             IEnumerable<CustomerBalanceEntryEntity> items;

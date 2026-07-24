@@ -6,5 +6,6 @@ namespace Dislana.Domain.Stock.Interfaces
     {
         Task<IEnumerable<CommittedInventoryEntity>> GetCommittedInventoryAsync(int userId, string itemCode, CancellationToken cancellationToken);
         Task<IEnumerable<InventoryStatementEntity>> GetInventoryStatementAsync(int userId, CancellationToken cancellationToken);
+        Task CancelOrderAsync(string document, string item, CancellationToken cancellationToken);
     }
 }

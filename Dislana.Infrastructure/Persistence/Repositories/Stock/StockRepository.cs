@@ -40,5 +40,17 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Stock
 
             return result;
         }
+
+        public async Task CancelOrderAsync(string document, string item, CancellationToken cancellationToken)
+        {
+            const string spName = "usp_saveCancelOrder";
+
+            await _dbExecutor.ExecuteAsync(
+                Context,
+                spName,
+                new { document, item },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken);
+        }
     }
 }

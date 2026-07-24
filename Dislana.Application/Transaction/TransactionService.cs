@@ -1,4 +1,5 @@
-﻿using Dislana.Application.Transaction.DTO;
+﻿using Dislana.Application.Common.Interfaces;
+using Dislana.Application.Transaction.DTO;
 using Dislana.Application.Transaction.Interfaces;
 using Dislana.Domain.Transaction.Interfaces;
 
@@ -7,12 +8,23 @@ namespace Dislana.Application.Transaction
     public class TransactionService : ITransactionService
     {
         private readonly ITransactionRepository _transactionRepository;
+        private readonly IUserContextService _userContextService;
 
-        public TransactionService(ITransactionRepository transactionRepository) => _transactionRepository = transactionRepository;
-
-        public async Task<IReadOnlyList<TransactionDto>> GetTransactionListAsync(string login, CancellationToken cancellationToken)
+        public TransactionService(ITransactionRepository transactionRepository, IUserContextService userContextService)
         {
-            var items = await _transactionRepository.GetTransactionListAsync(login, cancellationToken);
+            _transactionRepository = transactionRepository;
+            _userContextService = userContextService;
+        }
+
+        public async Task<IReadOnlyList<TransactionDto>> GetTransactionListAsync(CancellationToken cancellationToken)
+        {
+            var userIdString = _userContextService.GetId();
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+            }
+
+            var items = await _transactionRepository.GetTransactionListAsync(userId, cancellationToken);
             return items.Select(i => new TransactionDto(
                 i.TypeDocument,
                 i.Number,

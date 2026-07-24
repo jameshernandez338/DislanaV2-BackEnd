@@ -13,14 +13,14 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Transaction
 
         public TransactionRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
-        public async Task<IEnumerable<TransactionEntity>> GetTransactionListAsync(string login, CancellationToken cancellationToken)
+        public async Task<IEnumerable<TransactionEntity>> GetTransactionListAsync(int userId, CancellationToken cancellationToken)
         {
             const string spName = "usp_getDocumentList";
 
             var result = await _dbExecutor.QueryAsync<TransactionEntity>(
                 Context,
                 spName,
-                new { login },
+                new { login = userId },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
 

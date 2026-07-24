@@ -40,7 +40,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Order
                 spName,
                 new
                 {
-                    login = order.CreatedBy,
+                    login = order.CreatedById,
                     pedido = pedidoXml,
                     observacion = order.Observation
                 },

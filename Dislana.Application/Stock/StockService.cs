@@ -21,7 +21,7 @@ namespace Dislana.Application.Stock
             var userIdString = _userContextService.GetId();
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID not found in context");
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
             }
 
             var items = await _stockRepository.GetCommittedInventoryAsync(userId, itemCode, cancellationToken);
@@ -35,7 +35,7 @@ namespace Dislana.Application.Stock
             var userIdString = _userContextService.GetId();
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID not found in context");
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
             }
 
             var items = await _stockRepository.GetInventoryStatementAsync(userId, cancellationToken);
@@ -51,6 +51,17 @@ namespace Dislana.Application.Stock
                 i.PrecioTotal,
                 i.Imagen
             )).ToList().AsReadOnly();
+        }
+
+        public async Task CancelOrderAsync(string document, string item, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(document))
+                throw new ArgumentException("Document cannot be empty.", nameof(document));
+
+            if (string.IsNullOrWhiteSpace(item))
+                throw new ArgumentException("Item cannot be empty.", nameof(item));
+
+            await _stockRepository.CancelOrderAsync(document, item, cancellationToken);
         }
     }
 }

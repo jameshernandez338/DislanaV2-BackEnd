@@ -4,6 +4,6 @@ namespace Dislana.Domain.Transaction.Interfaces
 {
     public interface ITransactionRepository
     {
-        Task<IEnumerable<TransactionEntity>> GetTransactionListAsync(string login, CancellationToken cancellationToken);
+        Task<IEnumerable<TransactionEntity>> GetTransactionListAsync(int userId, CancellationToken cancellationToken);
     }
 }

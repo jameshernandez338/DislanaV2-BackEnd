@@ -4,6 +4,6 @@ namespace Dislana.Application.Transaction.Interfaces
 {
     public interface ITransactionService
     {
-        Task<IReadOnlyList<TransactionDto>> GetTransactionListAsync(string login, CancellationToken cancellationToken);
+        Task<IReadOnlyList<TransactionDto>> GetTransactionListAsync(CancellationToken cancellationToken);
     }
 }

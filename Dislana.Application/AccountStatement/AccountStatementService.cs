@@ -19,8 +19,7 @@ namespace Dislana.Application.AccountStatement
         }
 
         public async Task<IEnumerable<AccountStatementDto>> GetAccountStatementAsync(
-            DateTime startDate,
-            DateTime endDate,
+            AccountStatementRequestDto request,
             CancellationToken cancellationToken)
         {
             var userName = _userContextService.GetUserName();
@@ -28,7 +27,12 @@ namespace Dislana.Application.AccountStatement
             if (string.IsNullOrWhiteSpace(userName))
                 throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
-            var statements = await _accountStatementRepository.GetAccountStatementAsync(userName, startDate, endDate, cancellationToken);
+            var statements = await _accountStatementRepository.GetAccountStatementAsync(
+                userName, 
+                request.StartDate, 
+                request.EndDate, 
+                request.DocumentType,
+                cancellationToken);
 
             return statements.Select(s => new AccountStatementDto
             {

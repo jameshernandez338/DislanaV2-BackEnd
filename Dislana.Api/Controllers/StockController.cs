@@ -30,5 +30,23 @@ namespace Dislana.Api.Controllers
             var items = await _stockService.GetInventoryStatementAsync(cancellationToken);
             return Ok(items);
         }
+
+        // DELETE api/stock/cancel-order?document=...&item=...
+        [HttpDelete("cancel-order")]
+        public async Task<IActionResult> CancelOrder(
+            [FromQuery] string document,
+            [FromQuery] string item,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(document))
+                return BadRequest(new { message = "El parámetro 'document' es requerido." });
+
+            if (string.IsNullOrWhiteSpace(item))
+                return BadRequest(new { message = "El parámetro 'item' es requerido." });
+
+            await _stockService.CancelOrderAsync(document, item, cancellationToken);
+
+            return Ok(new { message = "Pedido cancelado exitosamente." });
+        }
     }
 }

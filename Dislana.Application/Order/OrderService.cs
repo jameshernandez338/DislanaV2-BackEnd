@@ -23,12 +23,13 @@ namespace Dislana.Application.Order
             OrderRequestDto request,
             CancellationToken cancellationToken)
         {
-            var userName = _userContextService.GetUserName();
-
-            if (string.IsNullOrWhiteSpace(userName))
+            var userIdString = _userContextService.GetId();
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
                 throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+            }
 
-            var order = OrderEntity.Create(userName, request.Observacion);
+            var order = OrderEntity.Create(userId, request.Observacion);
 
             foreach (var itemDto in request.Items)
             {

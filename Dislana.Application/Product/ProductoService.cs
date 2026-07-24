@@ -31,7 +31,7 @@ namespace Dislana.Application.Product
             var userIdString = _userContextService.GetId();
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID not found in context");
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
             }
 
             var items = await _productRepository.GetProductsByTypeAsync(type, userId, cancellationToken);
@@ -62,7 +62,7 @@ namespace Dislana.Application.Product
             var userIdString = _userContextService.GetId();
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                throw new UnauthorizedAccessException("User ID not found in context");
+                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
             }
 
             var detailEntity = await _productRepository.GetProductDetailByItemCodeAsync(itemCode, userId, cancellationToken);

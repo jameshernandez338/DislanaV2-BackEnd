@@ -16,14 +16,7 @@ namespace Dislana.Api.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetTransactionList(CancellationToken cancellationToken)
         {
-            var login = User?.Identity?.Name
-                        ?? User?.FindFirst("name")?.Value
-                        ?? User?.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrWhiteSpace(login))
-                return BadRequest(new { message = "No se pudo obtener el login del usuario." });
-
-            var items = await _transactionService.GetTransactionListAsync(login, cancellationToken);
+            var items = await _transactionService.GetTransactionListAsync(cancellationToken);
             return Ok(items);
         }
     }

@@ -8,7 +8,7 @@ namespace Dislana.Domain.Order.Entities
     public class OrderEntity
     {
         public string Id { get; private set; }
-        public string CreatedBy { get; private set; }
+        public int CreatedById { get; private set; }
         public string Observation { get; private set; }
         public DateTime CreatedAt { get; private set; }
         
@@ -16,21 +16,18 @@ namespace Dislana.Domain.Order.Entities
         public IReadOnlyList<OrderItemEntity> Items => _items.AsReadOnly();
 
         // Constructor privado para encapsulación
-        private OrderEntity(string createdBy, string observation)
+        private OrderEntity(int createdById, string observation)
         {
             Id = Guid.NewGuid().ToString();
-            CreatedBy = createdBy;
+            CreatedById = createdById;
             Observation = observation;
             CreatedAt = DateTime.UtcNow;
         }
 
         // Factory Method: punto de entrada con validaciones
-        public static OrderEntity Create(string userName, string? observation = null)
+        public static OrderEntity Create(int userId, string? observation = null)
         {
-            if (string.IsNullOrWhiteSpace(userName))
-                throw new Exceptions.DomainException("El usuario es requerido para crear una orden");
-
-            return new OrderEntity(userName.Trim(), observation?.Trim() ?? string.Empty);
+            return new OrderEntity(userId, observation?.Trim() ?? string.Empty);
         }
 
         // Comportamiento: agregar item con validaciones de negocio
@@ -74,7 +71,7 @@ namespace Dislana.Domain.Order.Entities
         private OrderEntity()
         {
             Id = string.Empty;
-            CreatedBy = string.Empty;
+            CreatedById = 0;
             Observation = string.Empty;
         }
     }
