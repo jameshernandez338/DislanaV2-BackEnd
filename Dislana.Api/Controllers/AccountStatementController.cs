@@ -30,5 +30,19 @@ namespace Dislana.Api.Controllers
 
             return Ok(result);
         }
+
+        // GET api/account-statement/detail/{documentNumber}
+        [HttpGet("detail/{documentNumber}")]
+        public async Task<IActionResult> GetAccountStatementDetail(
+            [FromRoute] string documentNumber,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(documentNumber))
+                return BadRequest(new { message = "Document number is required." });
+
+            var result = await _accountStatementService.GetAccountStatementDetailAsync(documentNumber, cancellationToken);
+
+            return Ok(result);
+        }
     }
 }

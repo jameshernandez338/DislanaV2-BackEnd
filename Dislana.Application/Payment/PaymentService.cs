@@ -67,10 +67,8 @@ namespace Dislana.Application.Payment
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
-            var userName = _userContextService.GetUserName();
-
-            if (string.IsNullOrWhiteSpace(userName))
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var reference = PaymentUtils.CreateReference();
             var pedido = PaymentUtils.BuildItemsXml(request.Items);
@@ -107,7 +105,7 @@ namespace Dislana.Application.Payment
             string raw = reference + amountInCents + currency + integritySecret;
             string signature = PaymentUtils.CreateSign(raw);
 
-            await _paymentRepository.SavePaymentAsync(userName, reference, "PENDING", pedido, request.ValorTotal, cancellationToken);
+            await _paymentRepository.SavePaymentAsync(userId, reference, "PENDING", pedido, request.ValorTotal, cancellationToken);
 
             return new WompiPaymentDto(publicKey, currency, amountInCents, reference, signature, redirectUrl, urlBase);
         }
@@ -116,15 +114,13 @@ namespace Dislana.Application.Payment
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
-            var userName = _userContextService.GetUserName();
-
-            if (string.IsNullOrWhiteSpace(userName))
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var reference = PaymentUtils.CreateReference();
             var pedido = PaymentUtils.BuildItemsXml(request.Items);
 
-            await _paymentRepository.SavePaymentAsync(userName, reference, "PRINT", pedido, request.ValorTotal, cancellationToken);
+            await _paymentRepository.SavePaymentAsync(userId, reference, "PRINT", pedido, request.ValorTotal, cancellationToken);
 
             return new PaymentResponseDto(reference, request.ValorTotal);
         }

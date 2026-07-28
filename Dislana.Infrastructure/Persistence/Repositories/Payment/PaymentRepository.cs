@@ -12,7 +12,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
 
         public PaymentRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
-        public async Task SavePaymentAsync(string userName, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken)
+        public async Task SavePaymentAsync(int userId, string reference, string status, string pedido, decimal valor, CancellationToken cancellationToken)
         {
             const string spName = "usp_savePaymentOrder";
 
@@ -20,7 +20,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
                 Context,
                 spName,
                 new { 
-                    userName = userName,
+                    userName = userId,
                     reference = reference,
                     status = status,
                     detail = pedido,
@@ -37,7 +37,13 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Payment
             await _dbExecutor.ExecuteAsync(
                 Context,
                 spName,
-                new { reference = reference, status = status, transactionId = transactionId, paymentMethod = paymentMethod, timestamp = timestamp },
+                new { 
+                    reference, 
+                    status, 
+                    transactionId, 
+                    paymentMethod, 
+                    timestamp 
+                },
                 commandType: CommandType.StoredProcedure);
         }
 

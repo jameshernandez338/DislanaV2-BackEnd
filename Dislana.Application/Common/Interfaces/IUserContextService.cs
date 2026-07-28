@@ -5,7 +5,7 @@
         /// <summary>
         /// Obtiene el ID del usuario autenticado
         /// </summary>
-        string? GetId();
+        int? GetUserId();
 
         /// <summary>
         /// Obtiene el nombre de usuario

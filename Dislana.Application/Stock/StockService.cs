@@ -18,11 +18,8 @@ namespace Dislana.Application.Stock
 
         public async Task<IReadOnlyList<CommittedInventoryDto>> GetCommittedInventoryAsync(string itemCode, CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var items = await _stockRepository.GetCommittedInventoryAsync(userId, itemCode, cancellationToken);
             return items.Select(i => new CommittedInventoryDto(i.Grupo, i.Documento, i.Fecha, i.Cantidad))
@@ -32,11 +29,8 @@ namespace Dislana.Application.Stock
 
         public async Task<IReadOnlyList<InventoryStatementDto>> GetInventoryStatementAsync(CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var items = await _stockRepository.GetInventoryStatementAsync(userId, cancellationToken);
             return items.Select(i => new InventoryStatementDto(

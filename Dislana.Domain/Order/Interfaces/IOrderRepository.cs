@@ -17,6 +17,6 @@ namespace Dislana.Domain.Order.Interfaces
         /// <summary>
         /// Obtiene los acabados de tela disponibles para un usuario
         /// </summary>
-        Task<IEnumerable<FabricFinishEntity>> GetFabricFinishesAsync(string login, CancellationToken cancellationToken);
+        Task<IEnumerable<FabricFinishEntity>> GetFabricFinishesAsync(int userId, CancellationToken cancellationToken);
     }
 }

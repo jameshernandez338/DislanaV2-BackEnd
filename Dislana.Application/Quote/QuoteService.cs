@@ -42,11 +42,8 @@ namespace Dislana.Application.Quote
 
         public async Task<CustomerTaxDto?> GetCustomerTaxesAsync(CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var entity = await _quoteRepository.GetCustomerTaxesAsync(userId, cancellationToken);
             if (entity == null) return null;
@@ -61,17 +58,16 @@ namespace Dislana.Application.Quote
                 entity.Apin,
                 entity.SaldoAFavor,
                 entity.Cupo,
-                entity.UsaCupo
+                entity.UsaCupo,
+                entity.BaseReteIca,
+                entity.BaseReteIva
             );
         }
 
         public async Task<IReadOnlyList<CustomerBalanceEntryDto>> GetCustomerBalanceAsync(string type, CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             IEnumerable<CustomerBalanceEntryEntity> items;
 

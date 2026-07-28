@@ -14,7 +14,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.AccountStatement
         public AccountStatementRepository(IContextualDbExecutor dbExecutor) => _dbExecutor = dbExecutor;
 
         public async Task<IEnumerable<AccountStatementEntity>> GetAccountStatementAsync(
-            string login,
+            int userId,
             DateTime startDate,
             DateTime endDate,
             string? documentType,
@@ -26,7 +26,7 @@ namespace Dislana.Infrastructure.Persistence.Repositories.AccountStatement
                 Context,
                 spName,
                 new { 
-                    cliente = login, 
+                    cliente = userId, 
                     fecha1 = startDate, 
                     fecha2 = endDate,
                     tipo = documentType
@@ -42,6 +42,31 @@ namespace Dislana.Infrastructure.Persistence.Repositories.AccountStatement
                 r.sal_doc,
                 r.nom_tip,
                 r.tipo
+            ));
+        }
+
+        public async Task<IEnumerable<AccountStatementDetailEntity>> GetAccountStatementDetailAsync(
+            int userId,
+            string documentNumber,
+            CancellationToken cancellationToken)
+        {
+            const string spName = "usp_getExtractoDet";
+
+            var result = await _dbExecutor.QueryAsync<AccountStatementDbModel>(
+                Context,
+                spName,
+                new { 
+                    cliente = userId,
+                    document= documentNumber
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken);
+
+            return result.Select(r => AccountStatementDetailEntity.Create(
+                r.fch_doc,
+                r.num_doc,
+                r.val_doc,
+                r.nom_tip
             ));
         }
 

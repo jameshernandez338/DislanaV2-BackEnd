@@ -44,11 +44,8 @@ namespace Dislana.Application.ChatAssistant.Services
         public async Task<ChatMessageResponse> ProcessMessageAsync(ChatMessageRequest request, CancellationToken cancellationToken)
         {
             // Obtener datos del cliente
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var userMessage = request.Message.Trim();
 
@@ -67,7 +64,7 @@ namespace Dislana.Application.ChatAssistant.Services
                 normalizedMessage.Contains("abono") ||
                 normalizedMessage.Contains("consignación");
 
-            var invoiceRecordsResult = await _chatInvoiceRepository.GetChatInvoiceByUserIdAsync(userIdString, cancellationToken);
+            var invoiceRecordsResult = await _chatInvoiceRepository.GetChatInvoiceByUserIdAsync(userId.ToString(), cancellationToken);
             var invoiceRecords = invoiceRecordsResult.ToList();
             var customerData = FormatInvoiceData(invoiceRecords);
             var customerName = invoiceRecords.Count > 0 ? invoiceRecords[0].Customer.Trim() : null;
@@ -86,7 +83,7 @@ namespace Dislana.Application.ChatAssistant.Services
             {
                 paymentTask = _paymentChatRepository
                     .GetPaymentsByUserIdAsync(
-                        userIdString,
+                        userId.ToString(),
                         cancellationToken);
             }
 
@@ -108,7 +105,7 @@ namespace Dislana.Application.ChatAssistant.Services
                 session = new ChatSessionEntity
                 {
                     SessionId = request.SessionId,
-                    UserId = userIdString,
+                    UserId = userId.ToString(),
                     History = new List<ChatMessageEntity>(),
                     WaitingForPdf = false,
                     PendingPdfType = string.Empty
@@ -462,12 +459,11 @@ namespace Dislana.Application.ChatAssistant.Services
         {
             try
             {
-                var userIdString = _userContextService.GetId();
-                if (string.IsNullOrEmpty(userIdString))
-                    return GeneratePdfReportResponse.Fail("Usuario no autenticado");
+                var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
                 var invoicesResult = await _chatInvoiceRepository.GetChatInvoiceByUserIdAsync(
-                    userIdString, 
+                    userId.ToString(), 
                     cancellationToken);
 
                 var invoices = invoicesResult.ToList();

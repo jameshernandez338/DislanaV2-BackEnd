@@ -13,10 +13,14 @@ namespace Dislana.Application.Common.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public string? GetId()
+        public int? GetUserId()
         {
-            return _httpContextAccessor.HttpContext?.User
+            var value = _httpContextAccessor.HttpContext?.User
                 ?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            return int.TryParse(value, out var userId)
+                ? userId
+                : null;
         }
 
         public string? GetUserName()

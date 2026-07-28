@@ -28,11 +28,8 @@ namespace Dislana.Application.Product
 
         public async Task<IReadOnlyList<ProductListDto>> GetProductsAsync(string type, CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var items = await _productRepository.GetProductsByTypeAsync(type, userId, cancellationToken);
             return items.Select(i => new ProductListDto(
@@ -59,11 +56,8 @@ namespace Dislana.Application.Product
 
         public async Task<ProductDetailDto?> GetProductDetailAsync(string itemCode, CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var detailEntity = await _productRepository.GetProductDetailByItemCodeAsync(itemCode, userId, cancellationToken);
             if (detailEntity == null)

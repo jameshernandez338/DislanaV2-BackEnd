@@ -22,13 +22,11 @@ namespace Dislana.Application.AccountStatement
             AccountStatementRequestDto request,
             CancellationToken cancellationToken)
         {
-            var userName = _userContextService.GetUserName();
-
-            if (string.IsNullOrWhiteSpace(userName))
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var statements = await _accountStatementRepository.GetAccountStatementAsync(
-                userName, 
+                userId, 
                 request.StartDate, 
                 request.EndDate, 
                 request.DocumentType,
@@ -43,6 +41,27 @@ namespace Dislana.Application.AccountStatement
                 Balance = s.Balance,
                 DocumentType = s.DocumentType,
                 Type = s.Type
+            });
+        }
+
+        public async Task<IEnumerable<AccountStatementDetailDto>> GetAccountStatementDetailAsync(
+            string documentNumber,
+            CancellationToken cancellationToken)
+        {
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+
+            var details = await _accountStatementRepository.GetAccountStatementDetailAsync(
+                userId, 
+                documentNumber,
+                cancellationToken);
+
+            return details.Select(d => new AccountStatementDetailDto
+            {
+                Date = d.Date,
+                DocumentNumber = d.DocumentNumber,
+                Value = d.Value,
+                DocumentType = d.DocumentType
             });
         }
     }

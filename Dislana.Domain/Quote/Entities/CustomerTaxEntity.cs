@@ -12,21 +12,9 @@ namespace Dislana.Domain.Quote.Entities
         public decimal SaldoAFavor { get; private set; }
         public decimal Cupo { get; private set; }
         public bool UsaCupo { get; private set; }
+        public decimal BaseReteIca { get; private set; }
+        public decimal BaseReteIva { get; private set; }
 
         private CustomerTaxEntity() { }
-
-        public CustomerTaxEntity(decimal descuento, decimal iva, decimal reteFuente, decimal reteIva, decimal reteIca, decimal cartera, decimal apin, decimal saldoAFavor, decimal cupo, bool usaCupo)
-        {
-            Descuento = descuento;
-            Iva = iva;
-            ReteFuente = reteFuente;
-            ReteIva = reteIva;
-            ReteIca = reteIca;
-            Cartera = cartera;
-            Apin = apin;
-            SaldoAFavor = saldoAFavor;
-            Cupo = cupo;
-            UsaCupo = usaCupo;
-        }
     }
 }

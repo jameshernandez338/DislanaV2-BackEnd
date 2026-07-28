@@ -18,11 +18,8 @@ namespace Dislana.Application.Transaction
 
         public async Task<IReadOnlyList<TransactionDto>> GetTransactionListAsync(CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var items = await _transactionRepository.GetTransactionListAsync(userId, cancellationToken);
             return items.Select(i => new TransactionDto(

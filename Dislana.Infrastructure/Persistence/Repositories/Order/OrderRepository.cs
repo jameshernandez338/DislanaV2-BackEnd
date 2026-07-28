@@ -57,14 +57,14 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Order
         /// Obtiene acabados de tela desde la base de datos
         /// Dapper mapea automáticamente a FabricFinishEntity
         /// </summary>
-        public async Task<IEnumerable<FabricFinishEntity>> GetFabricFinishesAsync(string login, CancellationToken cancellationToken)
+        public async Task<IEnumerable<FabricFinishEntity>> GetFabricFinishesAsync(int userId, CancellationToken cancellationToken)
         {
             const string spName = "usp_getFabricFinishes";
 
             return await _dbExecutor.QueryAsync<FabricFinishEntity>(
                 Context,
                 spName,
-                new { login },
+                new { login = userId },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
         }

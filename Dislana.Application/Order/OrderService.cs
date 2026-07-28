@@ -23,11 +23,8 @@ namespace Dislana.Application.Order
             OrderRequestDto request,
             CancellationToken cancellationToken)
         {
-            var userIdString = _userContextService.GetId();
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
-            {
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
-            }
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             var order = OrderEntity.Create(userId, request.Observacion);
 
@@ -66,13 +63,11 @@ namespace Dislana.Application.Order
         public async Task<IEnumerable<FabricFinishDto>> GetFabricFinishesAsync(
             CancellationToken cancellationToken)
         {
-            var userName = _userContextService.GetUserName();
-
-            if (string.IsNullOrWhiteSpace(userName))
-                throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
 
             // Obtener entidades del dominio
-            var entities = await _orderRepository.GetFabricFinishesAsync(userName, cancellationToken);
+            var entities = await _orderRepository.GetFabricFinishesAsync(userId, cancellationToken);
 
             // Mapear Domain Entities → DTOs
             return entities.Select(e => new FabricFinishDto(

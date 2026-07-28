@@ -10,6 +10,8 @@ namespace Dislana.Application.Quote.DTOs
         decimal Apin,
         decimal SaldoAFavor,
         decimal Cupo,
-        bool UsaCupo
+        bool UsaCupo,
+        decimal BaseReteIca,
+        decimal BaseReteIva
     );
 }
