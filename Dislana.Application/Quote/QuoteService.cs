@@ -40,6 +40,39 @@ namespace Dislana.Application.Quote
              .AsReadOnly();
         }
 
+        public async Task<IReadOnlyList<QuoteDetailDto>> GetQuoteDetailAsync(string item, CancellationToken cancellationToken)
+        {
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+
+            var details = await _quoteRepository.GetQuoteDetailAsync(userId.ToString(), item, cancellationToken);
+
+            return details.Select(d => new QuoteDetailDto(
+                d.Codigo,
+                d.Separados,
+                d.Calidad,
+                d.Imagen,
+                d.Cantidad,
+                d.PrecioTotal
+            )).ToList()
+              .AsReadOnly();
+        }
+
+        public async Task<IReadOnlyList<CustomerAddressDto>> GetCustomerAddressAsync(CancellationToken cancellationToken)
+        {
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+
+            var addresses = await _quoteRepository.GetCustomerAddressAsync(userId, cancellationToken);
+
+            return addresses.Select(a => new CustomerAddressDto(
+                a.Codigo,
+                a.Ciudad,
+                a.Direccion
+            )).ToList()
+              .AsReadOnly();
+        }
+
         public async Task<CustomerTaxDto?> GetCustomerTaxesAsync(CancellationToken cancellationToken)
         {
             var userId = _userContextService.GetUserId()

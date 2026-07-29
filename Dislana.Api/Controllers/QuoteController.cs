@@ -25,6 +25,25 @@ namespace Dislana.Api.Controllers
             return Ok(items);
         }
 
+        // GET api/quote/detail/{item}
+        [HttpGet("detail/{item}")]
+        public async Task<IActionResult> GetDetail([FromRoute] string item, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(item))
+                return BadRequest(new { message = "Item is required." });
+
+            var details = await _quoteService.GetQuoteDetailAsync(item, cancellationToken);
+            return Ok(details);
+        }
+
+        // GET api/quote/customer-address
+        [HttpGet("customer-address")]
+        public async Task<IActionResult> GetCustomerAddress(CancellationToken cancellationToken)
+        {
+            var addresses = await _quoteService.GetCustomerAddressAsync(cancellationToken);
+            return Ok(addresses);
+        }
+
         // GET api/quote/customer-taxes
         [HttpGet("customer-taxes")]
         public async Task<IActionResult> GetCustomerTaxes(CancellationToken cancellationToken)
