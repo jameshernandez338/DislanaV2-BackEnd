@@ -43,7 +43,8 @@ namespace Dislana.Application.Stock
                 i.SaldoPendiente,
                 i.CalidadLote,
                 i.PrecioTotal,
-                i.Imagen
+                i.Imagen,
+                i.Estado
             )).ToList().AsReadOnly();
         }
 

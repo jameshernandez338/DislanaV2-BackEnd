@@ -12,6 +12,7 @@ namespace Dislana.Application.Stock.DTOs
         decimal SaldoPendiente,
         string CalidadLote,
         decimal PrecioTotal,
-        string Imagen
+        string Imagen,
+        string Estado
     );
 }

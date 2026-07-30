@@ -66,9 +66,9 @@ namespace Dislana.Application.Quote
             var addresses = await _quoteRepository.GetCustomerAddressAsync(userId, cancellationToken);
 
             return addresses.Select(a => new CustomerAddressDto(
-                a.Codigo,
-                a.Ciudad,
-                a.Direccion
+                a.Code,
+                a.City,
+                a.Address
             )).ToList()
               .AsReadOnly();
         }

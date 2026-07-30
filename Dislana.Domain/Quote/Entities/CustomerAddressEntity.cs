@@ -2,32 +2,32 @@ namespace Dislana.Domain.Quote.Entities
 {
     public class CustomerAddressEntity
     {
-        public string Codigo { get; private set; }
-        public string Ciudad { get; private set; }
-        public string Direccion { get; private set; }
+        public string Code { get; private set; }
+        public string City { get; private set; }
+        public string Address { get; private set; }
 
         private CustomerAddressEntity(
-            string codigo,
-            string ciudad,
-            string direccion)
+            string code ,
+            string city,
+            string address)
         {
-            Codigo = codigo;
-            Ciudad = ciudad;
-            Direccion = direccion;
+            Code = code;
+            City = city;
+            Address = address;
         }
 
         public static CustomerAddressEntity Create(
-            string codigo,
-            string ciudad,
-            string direccion)
+            string code,
+            string city,
+            string address)
         {
-            if (string.IsNullOrWhiteSpace(codigo))
-                throw new ArgumentException("Codigo cannot be empty.", nameof(codigo));
+            if (string.IsNullOrWhiteSpace(code))
+                throw new ArgumentException("Code cannot be empty.", nameof(code));
 
             return new CustomerAddressEntity(
-                codigo,
-                ciudad,
-                direccion);
+                code,
+                city,
+                address);
         }
     }
 }

@@ -105,7 +105,7 @@ namespace Dislana.Application.Payment
             string raw = reference + amountInCents + currency + integritySecret;
             string signature = PaymentUtils.CreateSign(raw);
 
-            await _paymentRepository.SavePaymentAsync(userId, reference, "PENDING", pedido, request.ValorTotal, cancellationToken);
+            await _paymentRepository.SavePaymentAsync(userId, reference, "PENDING", pedido, request.ValorTotal, request.DireccionEntrega, cancellationToken);
 
             return new WompiPaymentDto(publicKey, currency, amountInCents, reference, signature, redirectUrl, urlBase);
         }
@@ -120,7 +120,7 @@ namespace Dislana.Application.Payment
             var reference = PaymentUtils.CreateReference();
             var pedido = PaymentUtils.BuildItemsXml(request.Items);
 
-            await _paymentRepository.SavePaymentAsync(userId, reference, "PRINT", pedido, request.ValorTotal, cancellationToken);
+            await _paymentRepository.SavePaymentAsync(userId, reference, "PRINT", pedido, request.ValorTotal, request.DireccionEntrega, cancellationToken);
 
             return new PaymentResponseDto(reference, request.ValorTotal);
         }

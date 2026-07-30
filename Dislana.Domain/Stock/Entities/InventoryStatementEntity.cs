@@ -12,21 +12,6 @@ namespace Dislana.Domain.Stock.Entities
         public string CalidadLote { get; private set; } = default!;
         public decimal PrecioTotal { get; private set; }
         public string Imagen { get; private set; } = default!;
-
-        private InventoryStatementEntity() { }
-
-        public InventoryStatementEntity(string grupo, string documento, string fecha, string item, string descripcion, decimal cantidad, decimal saldoPendiente, string calidadLote, decimal precioTotal, string imagen)
-        {
-            Grupo = grupo;
-            Documento = documento;
-            Fecha = fecha;
-            Item = item;
-            Descripcion = descripcion;
-            Cantidad = cantidad;
-            SaldoPendiente = saldoPendiente;
-            CalidadLote = calidadLote;
-            PrecioTotal = precioTotal;
-            Imagen = imagen;
-        }
+        public string Estado { get; private set; } = default!;
     }
 }
