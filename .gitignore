@@ -2,6 +2,7 @@ syntax : glob
 .vs/
 Dislana.Api/bin/
 Dislana.Api/obj/
+Dislana.Api/Properties/PublishProfiles/FolderProfile.pubxml.user
 Dislana.Application/bin/
 Dislana.Application/obj/
 Dislana.Domain/bin/

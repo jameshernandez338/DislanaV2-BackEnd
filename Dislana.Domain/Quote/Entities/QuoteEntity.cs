@@ -15,5 +15,6 @@ namespace Dislana.Domain.Quote.Entities
         public decimal Cantidad { get; private set; }
         public decimal PrecioTotal { get; private set; }
         public decimal PrecioAnticipo { get; private set; }
+        public string Estado { get; private set; } = default!;
     }
 }

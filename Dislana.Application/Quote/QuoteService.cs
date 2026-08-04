@@ -35,7 +35,8 @@ namespace Dislana.Application.Quote
                 i.Separados,
                 i.Cantidad,
                 i.PrecioTotal,
-                i.PrecioAnticipo)
+                i.PrecioAnticipo,
+                i.Estado)
             ).ToList()
              .AsReadOnly();
         }

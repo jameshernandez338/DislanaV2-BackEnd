@@ -13,6 +13,7 @@ namespace Dislana.Application.Quote.DTOs
         decimal Separados,
         decimal Cantidad,
         decimal PrecioTotal,
-        decimal PrecioAnticipo
+        decimal PrecioAnticipo,
+        string  Estado
     );
 }
