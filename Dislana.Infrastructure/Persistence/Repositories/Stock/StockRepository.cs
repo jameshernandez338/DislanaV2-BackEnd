@@ -41,6 +41,20 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Stock
             return result;
         }
 
+        public async Task<IEnumerable<InventoryStatementDetailEntity>> GetInventoryStatementDetailAsync(int userId, string item, CancellationToken cancellationToken)
+        {
+            const string spName = "usp_getInventoryStatementDetail";
+
+            var result = await _dbExecutor.QueryAsync<InventoryStatementDetailEntity>(
+                Context,
+                spName,
+                new { login = userId, item },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: cancellationToken);
+
+            return result;
+        }
+
         public async Task CancelOrderAsync(string document, string item, CancellationToken cancellationToken)
         {
             const string spName = "usp_saveCancelOrder";
@@ -51,6 +65,15 @@ namespace Dislana.Infrastructure.Persistence.Repositories.Stock
                 new { document, item },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: cancellationToken);
+        }
+
+        private class InventoryStatementDetailDbModel
+        {
+            public string Codigo { get; set; } = string.Empty;
+            public string Calidad { get; set; } = string.Empty;
+            public decimal Separados { get; set; }
+            public decimal Cantidad { get; set; }
+            public decimal Valor { get; set; }
         }
     }
 }

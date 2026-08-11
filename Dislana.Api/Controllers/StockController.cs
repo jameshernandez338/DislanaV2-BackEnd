@@ -31,6 +31,17 @@ namespace Dislana.Api.Controllers
             return Ok(items);
         }
 
+        // GET api/stock/statement/detail/{item}
+        [HttpGet("statement/detail/{item}")]
+        public async Task<IActionResult> GetInventoryStatementDetail([FromRoute] string item, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(item))
+                return BadRequest(new { message = "Item is required." });
+
+            var details = await _stockService.GetInventoryStatementDetailAsync(item, cancellationToken);
+            return Ok(details);
+        }
+
         // DELETE api/stock/cancel-order?document=...&item=...
         [HttpDelete("cancel-order")]
         public async Task<IActionResult> CancelOrder(

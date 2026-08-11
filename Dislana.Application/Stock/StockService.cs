@@ -48,6 +48,24 @@ namespace Dislana.Application.Stock
             )).ToList().AsReadOnly();
         }
 
+        public async Task<IReadOnlyList<InventoryStatementDetailDto>> GetInventoryStatementDetailAsync(string item, CancellationToken cancellationToken)
+        {
+            var userId = _userContextService.GetUserId()
+                ?? throw new UnauthorizedAccessException("No se pudo obtener el login del usuario.");
+
+            var details = await _stockRepository.GetInventoryStatementDetailAsync(userId, item, cancellationToken);
+
+            return details.Select(d => new InventoryStatementDetailDto(
+                d.Codigo,
+                d.Documento,
+                d.Calidad,
+                d.Separados,
+                d.Cantidad,
+                d.PrecioTotal
+            )).ToList()
+              .AsReadOnly();
+        }
+
         public async Task CancelOrderAsync(string document, string item, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(document))
