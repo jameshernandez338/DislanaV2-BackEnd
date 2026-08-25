@@ -1,4 +1,5 @@
 ﻿using Dislana.Application.ChatAssistant.Interfaces;
+using Dislana.Application.ChatAssistant.Models;
 using Dislana.Application.ChatAssistant.Request;
 using Dislana.Application.ChatAssistant.Response;
 using Dislana.Application.Common.Interfaces;
@@ -7,6 +8,7 @@ using Dislana.Domain.ChatAssistant.Interfaces;
 using Dislana.Domain.Exceptions;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 
 namespace Dislana.Application.ChatAssistant.Services
 {
@@ -20,6 +22,7 @@ namespace Dislana.Application.ChatAssistant.Services
         private readonly IScheduledMessageRepository _scheduledMessageRepository;
         private readonly IProductChatRepository _productChatRepository;
         private readonly IPaymentChatRepository _paymentChatRepository;
+        private readonly IPolicyRepository _policyRepository;
 
         public ChatAssistantService(
             IChatSessionRepository sessionRepository,
@@ -29,7 +32,8 @@ namespace Dislana.Application.ChatAssistant.Services
             IPdfReportGenerator pdfReportGenerator,
             IScheduledMessageRepository scheduledMessageRepository,
             IProductChatRepository productChatRepository,
-            IPaymentChatRepository paymentChatRepository)
+            IPaymentChatRepository paymentChatRepository,
+            IPolicyRepository policyRepository)
         {
             _sessionRepository = sessionRepository;
             _openAIService = openAIService;
@@ -39,6 +43,7 @@ namespace Dislana.Application.ChatAssistant.Services
             _scheduledMessageRepository = scheduledMessageRepository;
             _productChatRepository = productChatRepository;
             _paymentChatRepository = paymentChatRepository;
+            _policyRepository = policyRepository;
         }
 
         public async Task<ChatMessageResponse> ProcessMessageAsync(ChatMessageRequest request, CancellationToken cancellationToken)
@@ -49,20 +54,31 @@ namespace Dislana.Application.ChatAssistant.Services
 
             var userMessage = request.Message.Trim();
 
-            // Detectar intención
-            var normalizedMessage = userMessage.ToLowerInvariant();
+            // Clasificar intención usando LLM
+            var classificationPrompt = $@"
+            Analiza el siguiente mensaje de un cliente y responde ÚNICAMENTE con un JSON, sin texto adicional, indicando qué información necesitas para responderlo:
 
-            var needsProducts =
-                normalizedMessage.Contains("producto") ||
-                normalizedMessage.Contains("catalogo") ||
-                normalizedMessage.Contains("catálogo") ||
-                normalizedMessage.Contains("comprar") ||
-                normalizedMessage.Contains("pedido");
+            Mensaje: ""{userMessage}""
 
-            var needsPayments =
-                normalizedMessage.Contains("pago") ||
-                normalizedMessage.Contains("abono") ||
-                normalizedMessage.Contains("consignación");
+            Responde así:
+            {{
+              ""needsProducts"": true/false,
+              ""needsPayments"": true/false,
+              ""needsPolicy"": true/false
+            }}
+
+            needsProducts es true si el mensaje pregunta por productos, catálogo, precios, disponibilidad o compras.
+            needsPayments es true si el mensaje pregunta por pagos, abonos, consignaciones o estado de cuenta.
+            needsPolicy es true si el mensaje trata sobre políticas, términos y condiciones, devoluciones, reembolsos, garantías o cambios — aunque no use esas palabras exactas.
+            ";
+
+            var classificationResponse = await _openAIService.SendAsync(classificationPrompt, cancellationToken);
+            var intent = JsonSerializer.Deserialize<IntentResult>(StripJsonFences(classificationResponse)) 
+                ?? new IntentResult();
+
+            var needsProducts = intent.NeedsProducts;
+            var needsPayments = intent.NeedsPayments;
+            var needsPolicy = intent.NeedsPolicy;
 
             var invoiceRecordsResult = await _chatInvoiceRepository.GetChatInvoiceByUserIdAsync(userId.ToString(), cancellationToken);
             var invoiceRecords = invoiceRecordsResult.ToList();
@@ -72,6 +88,7 @@ namespace Dislana.Application.ChatAssistant.Services
             // Cargar solo si se necesita
             Task<IEnumerable<ProductEntity>>? productTask = null;
             Task<IEnumerable<PaymentEntity>>? paymentTask = null;
+            Task<PolicyEntity?>? policyTask = null;
 
             if (needsProducts)
             {
@@ -87,17 +104,28 @@ namespace Dislana.Application.ChatAssistant.Services
                         cancellationToken);
             }
 
+            if (needsPolicy)
+            {
+                policyTask = _policyRepository
+                    .GetPolicyContentAsync(cancellationToken);
+            }
+
             if (productTask is not null)
                 await productTask;
 
             if (paymentTask is not null)
                 await paymentTask;
 
+            if (policyTask is not null)
+                await policyTask;
+
             var productList = productTask is not null ? productTask.Result.ToList() : new List<ProductEntity>();
             var productData = FormatProductData(productList);
 
             var paymentList = paymentTask is not null ? paymentTask.Result.ToList() : new List<PaymentEntity>();
             var paymentData = FormatPaymentData(paymentList);
+
+            var policyContent = policyTask is not null ? policyTask.Result?.Contenido ?? string.Empty : string.Empty;
 
             var session = _sessionRepository.GetSession(request.SessionId);
             if (session == null)
@@ -176,7 +204,8 @@ namespace Dislana.Application.ChatAssistant.Services
                 productData,
                 productList.Count,
                 paymentData,
-                paymentList.Count
+                paymentList.Count,
+                policyContent
             );
 
             session.History = session.History
@@ -346,7 +375,8 @@ namespace Dislana.Application.ChatAssistant.Services
             string productData,
             int productCount,
             string paymentData,
-            int paymentCount)
+            int paymentCount,
+            string policyContent)
         {
             var sb = new StringBuilder();
 
@@ -382,10 +412,8 @@ namespace Dislana.Application.ChatAssistant.Services
             sb.AppendLine("Si te preguntan por fecha de pago, toma la fecha de la factura y súmale 30 días. e invitalo a pagar en linea en el menu cotizar");
             sb.AppendLine("También puedes informar el saldo de la factura.");
 
-            sb.AppendLine("Si el cliente quiere comprar o buscar productos, indícale que puede hacerlo desde nuestro catalogo o tienda en línea, tambien invitalo a cotizar y pagar en linea en el menu cotizar");
-            sb.AppendLine("https://www.uniline.com.co/");
+            sb.AppendLine("Si el cliente quiere comprar o buscar productos, indícale que puede hacerlo desde nuestro catalogo o tienda en línea, tambien invitalo a cotizar y pagar en linea en el menu cotizar, ademas Si desean realizar un nuevo pedido, comparte este enlace:");
 
-            sb.AppendLine("Si desean realizar un nuevo pedido, comparte este enlace:");
             sb.AppendLine("https://ecommerce.dislana.com/dist/Dislana/#/");
 
             sb.AppendLine("Si preguntan por horarios, informa:");
@@ -394,13 +422,29 @@ namespace Dislana.Application.ChatAssistant.Services
 
             sb.AppendLine("Si el cliente pregunta algo que no está en los datos proporcionados, responde que no tienes esa información.");
 
+            // Información de políticas y términos y condiciones
+            if (!string.IsNullOrEmpty(policyContent))
+            {
+                sb.AppendLine();
+                sb.AppendLine("POLÍTICAS DE TÉRMINOS Y CONDICIONES:");
+                sb.AppendLine("Cuando un cliente realice una pregunta relacionada con términos y condiciones, cambios, devoluciones, reembolsos, garantías, productos defectuosos, tiempos de devolución, costos de envío, condiciones para aceptar una devolución o cualquier otra política de compra, utiliza la siguiente información oficial:");
+                sb.AppendLine();
+                sb.AppendLine(policyContent);
+                sb.AppendLine();
+                sb.AppendLine("Utiliza esta información para intentar resolver directamente la duda del cliente. NO envíes ni muestres la URL de términos y condiciones cuando puedas resolver la pregunta con la información proporcionada. No inventes, supongas ni completes información que no esté contemplada en las políticas. Si el cliente plantea un caso específico, analiza la información disponible y guía al cliente sobre qué debe hacer. Si la política establece requisitos, plazos, condiciones del producto, documentos, costos, excepciones o procedimientos, explícalos claramente y de forma sencilla. Si necesitas información adicional del cliente para determinar si su caso cumple con la política, solicita únicamente la información necesaria. Si la información proporcionada no permite resolver la pregunta o no existe información suficiente para orientar correctamente al cliente, indícalo de forma transparente y proporciona ÚNICAMENTE EN ESE CASO la URL oficial de términos y condiciones: https://ecommerce.dislana.com/dist/Dislana/informacion/terminos-y-condiciones. Responde siempre de manera amable, clara, profesional y sencilla, evitando lenguaje jurídico innecesariamente complejo.");
+            }
+            else
+            {
+                sb.AppendLine();
+                sb.AppendLine("Cuando un cliente realice una pregunta relacionada con términos y condiciones, cambios, devoluciones, reembolsos, garantías, productos defectuosos, tiempos de devolución, costos de envío, condiciones para aceptar una devolución o cualquier otra política de compra, informa al cliente que puede consultar los términos y condiciones completos en: https://ecommerce.dislana.com/dist/Dislana/informacion/terminos-y-condiciones");
+            }
+
             sb.AppendLine("IMPORTANTE:");
             sb.AppendLine("- Solo ofrece descargar o enviar el PDF en la primera respuesta relacionada con facturas o saldos.");
             sb.AppendLine("- Después de ofrecerlo una vez, no vuelvas a ofrecer el PDF automáticamente.");
             sb.AppendLine("- Si el cliente escribe palabras como: 'envíame', 'enviame', 'pdf', 'descargar factura' o similares, entonces sí ofrece nuevamente el PDF.");
             sb.AppendLine("- Cuando debas ofrecer el PDF, agrega exactamente al final del mensaje: [OFRECER_PDF]");
 
-            sb.AppendLine();
             sb.AppendLine("Datos actuales del cliente:");
             sb.AppendLine(customerData);
 
@@ -495,6 +539,24 @@ namespace Dislana.Application.ChatAssistant.Services
             {
                 return GeneratePdfReportResponse.Fail($"Error al generar PDF: {ex.Message}");
             }
+        }
+
+        private static string StripJsonFences(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return text;
+
+            text = text.Trim();
+
+            if (text.StartsWith("```json"))
+                text = text.Substring("```json".Length);
+            else if (text.StartsWith("```"))
+                text = text.Substring("```".Length);
+
+            if (text.EndsWith("```"))
+                text = text.Substring(0, text.Length - "```".Length);
+
+            return text.Trim();
         }
     }
 }

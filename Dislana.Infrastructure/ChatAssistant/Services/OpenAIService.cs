@@ -57,6 +57,45 @@ namespace Dislana.Infrastructure.ChatAssistant.Services
 
             return responseText;
         }
+
+        public async Task<string> SendAsync(string prompt, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.ApiKey))
+            {
+                throw new InvalidOperationException("OpenAI API Key no configurada. Configure en User Secrets.");
+            }
+
+            var messages = new List<object>
+            {
+                new { role = "user", content = prompt }
+            };
+
+            var requestBody = new
+            {
+                model = _settings.Model,
+                max_tokens = 100,
+                messages
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            {
+                Content = JsonContent.Create(requestBody)
+            };
+            request.Headers.Add("Authorization", $"Bearer {_settings.ApiKey}");
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new HttpRequestException($"OpenAI API error: {response.StatusCode} - {errorContent}");
+            }
+
+            var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            var responseText = jsonResponse.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? string.Empty;
+
+            return responseText;
+        }
     }
 }
 

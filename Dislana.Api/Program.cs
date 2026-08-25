@@ -95,6 +95,7 @@ builder.Services.AddScoped<IChatInvoiceRepository, ChatInvoiceRepository>();
 builder.Services.AddScoped<IScheduledMessageRepository, ScheduledMessageRepository>();
 builder.Services.AddScoped<IProductChatRepository, ProductChatRepository>();
 builder.Services.AddScoped<IPaymentChatRepository, PaymentChatRepository>();
+builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
 builder.Services.AddSingleton<IChatSessionRepository, InMemoryChatSessionRepository>();
 builder.Services.AddHttpClient<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IPdfReportGenerator, QuestPdfReportGenerator>();
